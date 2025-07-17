@@ -65,6 +65,30 @@ public class DashboardServiceImpl implements DashboardService {
             totalIngresos = ingresosData.stream()
                     .map(row -> (BigDecimal) row[0])
                     .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            // Rellenar meses vacíos con 0
+            if (groupBy != null && groupBy.equalsIgnoreCase("MONTH") && startDate != null && endDate != null) {
+                java.time.YearMonth start = java.time.YearMonth.from(startDate);
+                java.time.YearMonth end = java.time.YearMonth.from(endDate);
+                java.time.YearMonth current = start;
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM");
+                while (!current.isAfter(end)) {
+                    String key = current.format(formatter);
+                    ingresosPorPeriodo.putIfAbsent(key, BigDecimal.ZERO);
+                    current = current.plusMonths(1);
+                }
+            }
+
+            // Rellenar años vacíos con 0
+            if (groupBy != null && groupBy.equalsIgnoreCase("YEAR") && startDate != null && endDate != null) {
+                int startYear = startDate.getYear();
+                int endYear = endDate.getYear();
+                java.time.format.DateTimeFormatter formatter = java.time.format.DateTimeFormatter.ofPattern("yyyy");
+                for (int year = startYear; year <= endYear; year++) {
+                    String key = String.valueOf(year);
+                    ingresosPorPeriodo.putIfAbsent(key, BigDecimal.ZERO);
+                }
+            }
         } else {
             // Si no hay groupBy, sumar todos los ingresos para el total general
             totalIngresos = ingresosData.stream()
