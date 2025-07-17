@@ -9,6 +9,7 @@ import com.example.gestion.taller_mecanico.mapper.AlertaMapper;
 import com.example.gestion.taller_mecanico.model.dto.AlertaEstadoRequest;
 import com.example.gestion.taller_mecanico.model.dto.AlertaRequest;
 import com.example.gestion.taller_mecanico.model.dto.AlertaResponse;
+import com.example.gestion.taller_mecanico.model.dto.MensajeResponse;
 import com.example.gestion.taller_mecanico.model.entity.Alerta;
 import com.example.gestion.taller_mecanico.model.entity.Cliente;
 import com.example.gestion.taller_mecanico.model.entity.Taller;
@@ -28,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -155,7 +157,7 @@ public class AlertaServiceImpl implements AlertaService {
     }
 
     @Override
-    public AlertaResponse updateAlertaEstado(Long id, AlertaEstadoRequest alertaEstadoRequest) {
+    public ResponseEntity<?> updateAlertaEstado(Long id, AlertaEstadoRequest alertaEstadoRequest) {
         Alerta alerta = alertaRepository.findById(id)
                 .orElseThrow(() -> new AlertaNotFoundException("Alerta no encontrada con ID: " + id));
 
@@ -177,8 +179,18 @@ public class AlertaServiceImpl implements AlertaService {
             }
         }
 
+        // Cambiar estado
         alerta.setEstado(AlertaEstado.valueOf(alertaEstadoRequest.getEstado().toUpperCase()));
-        return alertaMapper.toAlertaResponse(alertaRepository.save(alerta));
+
+        if (alerta.getEstado() == AlertaEstado.RESUELTA) {
+            alertaRepository.delete(alerta);
+            MensajeResponse response = new MensajeResponse("✅ La alerta fue marcada como resuelta y eliminada.");
+            return ResponseEntity.ok(response);
+        } else {
+            Alerta alertaActualizada = alertaRepository.save(alerta);
+            return ResponseEntity.ok(alertaMapper.toAlertaResponse(alertaActualizada));
+        }
+
     }
 
     @Override

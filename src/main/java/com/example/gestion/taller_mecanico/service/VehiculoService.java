@@ -20,4 +20,5 @@ public interface VehiculoService {
     Page<VehiculoResponse> findVehiculosByFilters(String search, Long clienteId, Long tallerAsignadoId, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable);
     Page<VehiculoResponse> findMyVehiculosByFilters(String search, String estado, Pageable pageable);
     VehiculoResponse updateClientVehiculo(Long id, VehiculoClientRequest vehiculoClientRequest);
+    VehiculoResponse updateEstadoVehiculo(Long id, String estadoVehiculo);
 }

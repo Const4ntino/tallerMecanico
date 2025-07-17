@@ -63,8 +63,8 @@ public class AlertaController {
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER', 'TRABAJADOR', 'CLIENTE')")
     @PatchMapping("/{id}/estado")
-    public ResponseEntity<AlertaResponse> updateAlertaEstado(@PathVariable Long id, @Valid @RequestBody AlertaEstadoRequest alertaEstadoRequest) {
-        return ResponseEntity.ok(alertaService.updateAlertaEstado(id, alertaEstadoRequest));
+    public ResponseEntity<?> updateAlertaEstado(@PathVariable Long id, @Valid @RequestBody AlertaEstadoRequest alertaEstadoRequest) {
+        return alertaService.updateAlertaEstado(id, alertaEstadoRequest);
     }
 
     @PreAuthorize("hasRole('CLIENTE')")

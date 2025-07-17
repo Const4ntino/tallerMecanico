@@ -5,6 +5,7 @@ import com.example.gestion.taller_mecanico.model.dto.AlertaRequest;
 import com.example.gestion.taller_mecanico.model.dto.AlertaResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -14,7 +15,7 @@ public interface AlertaService {
     AlertaResponse findById(Long id);
     AlertaResponse save(AlertaRequest alertaRequest);
     AlertaResponse update(Long id, AlertaRequest alertaRequest);
-    AlertaResponse updateAlertaEstado(Long id, AlertaEstadoRequest alertaEstadoRequest);
+    ResponseEntity<?> updateAlertaEstado(Long id, AlertaEstadoRequest alertaEstadoRequest);
     AlertaResponse markAlertaAsViewed(Long id);
     Page<AlertaResponse> findPendingAlerts(Pageable pageable);
     void deleteById(Long id);

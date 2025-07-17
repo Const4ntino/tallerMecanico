@@ -9,8 +9,7 @@ import com.example.gestion.taller_mecanico.model.dto.MantenimientoProductoRespon
 import com.example.gestion.taller_mecanico.model.entity.*;
 import com.example.gestion.taller_mecanico.repository.*;
 import com.example.gestion.taller_mecanico.specification.MantenimientoSpecification;
-import com.example.gestion.taller_mecanico.utils.enums.MantenimientoEstado;
-import com.example.gestion.taller_mecanico.utils.enums.Rol;
+import com.example.gestion.taller_mecanico.utils.enums.*;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -39,6 +38,7 @@ public class MantenimientoServiceImpl implements MantenimientoService {
     private final ClienteRepository clienteRepository;
     private final MantenimientoMapper mantenimientoMapper;
     private final MantenimientoProductoMapper mantenimientoProductoMapper;
+    private final AlertaRepository alertaRepository;
 
     @Override
     public List<MantenimientoResponse> findAll() {
@@ -90,16 +90,42 @@ public class MantenimientoServiceImpl implements MantenimientoService {
                 .servicio(servicio)
                 .trabajador(trabajador)
                 .estado(MantenimientoEstado.valueOf(mantenimientoRequest.getEstado().toUpperCase()))
-
                 .observacionesCliente(mantenimientoRequest.getObservacionesCliente())
                 .observacionesTrabajador(mantenimientoRequest.getObservacionesTrabajador());
 
         if (MantenimientoEstado
                 .valueOf(mantenimientoRequest.getEstado().toUpperCase()) == MantenimientoEstado.EN_PROCESO) {
+            vehiculo.setEstado(VehiculoEstado.EN_MANTENIMIENTO);
+            Vehiculo vehiculoActualizado = vehiculoRepository.save(vehiculo);
             builder.fechaInicio(LocalDateTime.now());
+
+            // 🚨 Crear alerta de mantenimiento en proceso
+            Alerta alerta = new Alerta();
+            alerta.setVehiculo(vehiculoActualizado);
+            alerta.setCliente(vehiculoActualizado.getCliente());
+            alerta.setTaller(servicio.getTaller()); // o donde obtengas el taller
+            alerta.setTipo(AlertaTipo.MANTENIMIENTO_PREVENTIVO);
+            alerta.setEstado(AlertaEstado.NUEVA);
+            alerta.setMensaje("Tu vehículo con placa " + vehiculo.getPlaca() + " ha sido ingresado a mantenimiento. Te avisaremos cuando está listo a disponibilidad.");
+            alertaRepository.save(alerta);
+
         } else if (MantenimientoEstado
                 .valueOf(mantenimientoRequest.getEstado().toUpperCase()) == MantenimientoEstado.COMPLETADO) {
+            vehiculo.setEstado(VehiculoEstado.ACTIVO);
+            Vehiculo vehiculoActualizado = vehiculoRepository.save(vehiculo);
             builder.fechaFin(mantenimientoRequest.getFechaFin());
+        } else  if (MantenimientoEstado
+                .valueOf(mantenimientoRequest.getEstado().toUpperCase()) == MantenimientoEstado.PENDIENTE) {
+
+            // 🚨 Crear alerta de mantenimiento en proceso
+            Alerta alerta = new Alerta();
+            alerta.setVehiculo(vehiculo);
+            alerta.setCliente(vehiculo.getCliente());
+            alerta.setTaller(servicio.getTaller()); // o donde obtengas el taller
+            alerta.setTipo(AlertaTipo.NUEVA_SOLICITUD);
+            alerta.setEstado(AlertaEstado.NUEVA);
+            alerta.setMensaje("Ya puedes acercarte a nuestro taller para realizar el mantenimiento a tu vehículo con placa " + vehiculo.getPlaca() + "Por favor aproxímate a el taller " + servicio.getTaller().getNombre() + ": " + servicio.getTaller().getDireccion());
+            alertaRepository.save(alerta);
         }
 
         Mantenimiento mantenimiento = builder.build();
@@ -175,7 +201,20 @@ public class MantenimientoServiceImpl implements MantenimientoService {
                     if (MantenimientoEstado
                             .valueOf(
                                     mantenimientoRequest.getEstado().toUpperCase()) == MantenimientoEstado.EN_PROCESO) {
+                        vehiculo.setEstado(VehiculoEstado.EN_MANTENIMIENTO);
+                        Vehiculo vehiculoActualizado = vehiculoRepository.save(vehiculo);
                         mantenimiento.setFechaInicio(LocalDateTime.now());
+
+                        // 🚨 Crear alerta de mantenimiento en proceso
+                        Alerta alerta = new Alerta();
+                        alerta.setVehiculo(vehiculoActualizado);
+                        alerta.setCliente(vehiculoActualizado.getCliente());
+                        alerta.setTaller(servicio.getTaller()); // o donde obtengas el taller
+                        alerta.setTipo(AlertaTipo.MANTENIMIENTO_PREVENTIVO);
+                        alerta.setEstado(AlertaEstado.NUEVA);
+                        alerta.setMensaje("Tu vehículo con placa " + vehiculo.getPlaca() + " ha sido ingresado a mantenimiento. Te avisaremos cuando está listo a disponibilidad.");
+                        alertaRepository.save(alerta);
+
                     } else if (MantenimientoEstado
                             .valueOf(
                                     mantenimientoRequest.getEstado().toUpperCase()) == MantenimientoEstado.COMPLETADO
@@ -183,8 +222,36 @@ public class MantenimientoServiceImpl implements MantenimientoService {
                                     .valueOf(
                                             mantenimientoRequest.getEstado()
                                                     .toUpperCase()) == MantenimientoEstado.CANCELADO) {
+                        vehiculo.setEstado(VehiculoEstado.ACTIVO);
+                        Vehiculo vehiculoActualizado = vehiculoRepository.save(vehiculo);
                         mantenimiento.setFechaFin(LocalDateTime.now());
+
+                        // 🚨 Crear alerta de mantenimiento en proceso
+                        Alerta alerta = new Alerta();
+                        alerta.setVehiculo(vehiculoActualizado);
+                        alerta.setCliente(vehiculoActualizado.getCliente());
+                        alerta.setTaller(servicio.getTaller()); // o donde obtengas el taller
+                        alerta.setTipo(AlertaTipo.VEHICULO_LISTO);
+                        alerta.setEstado(AlertaEstado.NUEVA);
+                        alerta.setMensaje("Tu vehículo con placa " + vehiculo.getPlaca() + " ha completado su mantenimiento. Por favor aproxímate a el taller " + servicio.getTaller().getNombre() + ": " + servicio.getTaller().getDireccion());
+                        alertaRepository.save(alerta);
+
+                    } else if (MantenimientoEstado
+                            .valueOf(
+                                    mantenimientoRequest.getEstado().toUpperCase()) == MantenimientoEstado.PENDIENTE) {
+
+                        // 🚨 Crear alerta de mantenimiento en proceso
+                        Alerta alerta = new Alerta();
+                        alerta.setVehiculo(vehiculo);
+                        alerta.setCliente(vehiculo.getCliente());
+                        alerta.setTaller(servicio.getTaller()); // o donde obtengas el taller
+                        alerta.setTipo(AlertaTipo.NUEVA_SOLICITUD);
+                        alerta.setEstado(AlertaEstado.NUEVA);
+                        alerta.setMensaje("Ya puedes acercarte a nuestro taller para realizar el mantenimiento a tu vehículo con placa " + vehiculo.getPlaca() + "Por favor aproxímate a el taller " + servicio.getTaller().getNombre() + ": " + servicio.getTaller().getDireccion());
+                        alertaRepository.save(alerta);
                     }
+
+
                     mantenimiento.setObservacionesCliente(mantenimientoRequest.getObservacionesCliente());
                     mantenimiento.setObservacionesTrabajador(mantenimientoRequest.getObservacionesTrabajador());
 

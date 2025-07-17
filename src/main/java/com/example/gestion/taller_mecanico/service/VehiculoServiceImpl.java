@@ -168,4 +168,19 @@ public class VehiculoServiceImpl implements VehiculoService {
                     return vehiculoMapper.toVehiculoResponse(vehiculoRepository.save(vehiculo));
                 }).orElseThrow(() -> new VehiculoNotFoundException("Vehiculo no encontrado con ID: " + id));
     }
+
+    @Override
+    public VehiculoResponse updateEstadoVehiculo(Long id, String estadoVehiculo) {
+        Vehiculo vehiculo = vehiculoRepository.findById(id)
+                .orElseThrow(() -> new VehiculoNotFoundException("Vehículo no encontrado con ID: " + id));
+
+        try {
+            VehiculoEstado nuevoEstado = VehiculoEstado.valueOf(estadoVehiculo.toUpperCase());
+            vehiculo.setEstado(nuevoEstado);
+            Vehiculo vehiculoActualizado = vehiculoRepository.save(vehiculo);
+            return vehiculoMapper.toVehiculoResponse(vehiculoActualizado);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Estado de vehículo no válido: " + estadoVehiculo);
+        }
+    }
 }
