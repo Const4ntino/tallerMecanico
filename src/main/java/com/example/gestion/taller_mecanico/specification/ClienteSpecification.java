@@ -28,6 +28,7 @@ public class ClienteSpecification {
                 Join<Cliente, Usuario> usuarioJoin = root.join("usuario");
                 predicates.add(criteriaBuilder.or(
                         criteriaBuilder.like(criteriaBuilder.lower(usuarioJoin.get("nombreCompleto")), "%" + lowerCaseSearch + "%"),
+                        criteriaBuilder.like(criteriaBuilder.lower(usuarioJoin.get("dni")), "%" + lowerCaseSearch + "%"),
                         criteriaBuilder.like(criteriaBuilder.lower(usuarioJoin.get("correo")), "%" + lowerCaseSearch + "%"),
                         criteriaBuilder.like(criteriaBuilder.lower(usuarioJoin.get("username")), "%" + lowerCaseSearch + "%"),
                         criteriaBuilder.like(criteriaBuilder.lower(root.get("telefono")), "%" + lowerCaseSearch + "%"),

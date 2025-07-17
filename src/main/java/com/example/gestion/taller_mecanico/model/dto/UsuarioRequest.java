@@ -29,7 +29,7 @@ public class UsuarioRequest {
     @NotBlank
     @Size(max = 50)
     private String username;
-    
+
     private String contrasena;
 
     @NotBlank
