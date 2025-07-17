@@ -18,6 +18,10 @@ public class UsuarioRequest {
     @Size(max = 150)
     private String nombreCompleto;
 
+    @NotBlank
+    @Size(max = 8)
+    private String dni;
+
     @Email
     @Size(max = 100)
     private String correo;
@@ -25,8 +29,7 @@ public class UsuarioRequest {
     @NotBlank
     @Size(max = 50)
     private String username;
-
-    @Size(min = 6, max = 255)
+    
     private String contrasena;
 
     @NotBlank

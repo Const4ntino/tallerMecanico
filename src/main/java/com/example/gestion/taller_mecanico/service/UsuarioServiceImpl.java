@@ -57,6 +57,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponse save(UsuarioRequest usuarioRequest) {
         Usuario usuario = Usuario.builder()
                 .nombreCompleto(usuarioRequest.getNombreCompleto())
+                .dni(usuarioRequest.getDni())
                 .correo(usuarioRequest.getCorreo())
                 .username(usuarioRequest.getUsername())
                 .password(passwordEncoder.encode(usuarioRequest.getContrasena()))
@@ -70,9 +71,10 @@ public class UsuarioServiceImpl implements UsuarioService {
         return usuarioRepository.findById(id)
                 .map(usuario -> {
                     usuario.setNombreCompleto(usuarioRequest.getNombreCompleto());
+                    usuario.setDni(usuarioRequest.getDni());
                     usuario.setCorreo(usuarioRequest.getCorreo());
                     usuario.setUsername(usuarioRequest.getUsername());
-                    if (usuarioRequest.getContrasena() != null) {
+                    if (usuarioRequest.getContrasena() != null && !usuarioRequest.getContrasena().trim().isEmpty()) {
                         usuario.setPassword(passwordEncoder.encode(usuarioRequest.getContrasena()));
                     }
                     usuario.setRol(Rol.valueOf(usuarioRequest.getRol().toUpperCase()));
@@ -84,6 +86,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponse createUsuarioCliente(UsuarioClienteRequest request) {
         Usuario nuevoUsuario = Usuario.builder()
                 .nombreCompleto(request.getNombreCompleto())
+                .dni(request.getDni())
                 .correo(request.getCorreo())
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getContrasena()))
@@ -108,6 +111,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponse createUsuarioTrabajador(UsuarioTrabajadorRequest request) {
         Usuario nuevoUsuario = Usuario.builder()
                 .nombreCompleto(request.getNombreCompleto())
+                .dni(request.getDni())
                 .correo(request.getCorreo())
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getContrasena()))

@@ -51,6 +51,7 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse register(RegisterRequest request) {
         Usuario nuevoUsuario = Usuario.builder()
                 .nombreCompleto(request.getNombreCompleto())
+                .dni(request.getDni())
                 .correo(request.getCorreo())
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getContrasena()))

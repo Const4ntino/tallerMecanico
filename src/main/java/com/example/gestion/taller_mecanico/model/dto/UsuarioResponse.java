@@ -15,6 +15,7 @@ public class UsuarioResponse {
 
     private Long id;
     private String nombreCompleto;
+    private String dni;
     private String correo;
     private String username;
     private String rol;

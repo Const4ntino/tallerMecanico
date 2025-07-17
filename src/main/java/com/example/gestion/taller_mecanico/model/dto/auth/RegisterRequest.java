@@ -18,6 +18,10 @@ public class RegisterRequest {
     @Size(max = 150)
     private String nombreCompleto;
 
+    @NotBlank
+    @Size(max = 8)
+    private String dni;
+
     @Email
     @Size(max = 100)
     private String correo;

@@ -124,6 +124,7 @@ public class ClienteServiceImpl implements ClienteService {
                     .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado para el usuario autenticado."));
 
             usuario.setNombreCompleto(usuarioClienteRequest.getNombreCompleto());
+            usuario.setDni(usuarioClienteRequest.getDni());
             usuario.setCorreo(usuarioClienteRequest.getCorreo());
             usuario.setUsername(usuarioClienteRequest.getUsername());
 

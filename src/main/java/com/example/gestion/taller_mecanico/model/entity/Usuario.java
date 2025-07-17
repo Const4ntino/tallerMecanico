@@ -29,6 +29,9 @@ public class Usuario implements UserDetails {
     @Column(name = "nombre_completo", nullable = false, length = 150)
     private String nombreCompleto;
 
+    @Column(nullable = true, length = 8)
+    private String dni;
+
     @Column(unique = true, length = 100)
     private String correo;
 
