@@ -2,6 +2,7 @@ package com.example.gestion.taller_mecanico.controller;
 
 import com.example.gestion.taller_mecanico.model.dto.ClienteRequest;
 import com.example.gestion.taller_mecanico.model.dto.ClienteResponse;
+import com.example.gestion.taller_mecanico.model.dto.UsuarioClienteRequest;
 import com.example.gestion.taller_mecanico.model.dto.VehiculoResponse;
 import com.example.gestion.taller_mecanico.service.ClienteService;
 import com.example.gestion.taller_mecanico.service.VehiculoService;
@@ -63,6 +64,18 @@ public class ClienteController {
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("hasRole('CLIENTE')")
+    @PutMapping("/mis-datos")
+    public ResponseEntity<ClienteResponse> updateMisDatos(@RequestBody UsuarioClienteRequest usuarioClienteRequest) {
+        return ResponseEntity.ok(clienteService.updateMisDatos(usuarioClienteRequest));
+    }
+
+    @PreAuthorize("hasRole('CLIENTE')")
+    @GetMapping("/mis-datos")
+    public ResponseEntity<ClienteResponse> getMisDatos() {
+        return ResponseEntity.ok(clienteService.getMisDatos());
+    }
+
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @GetMapping("/filtrar")
     public ResponseEntity<Page<ClienteResponse>> findClientes(
@@ -89,4 +102,6 @@ public class ClienteController {
         );
         return ResponseEntity.ok(vehiculos);
     }
+
+
 }

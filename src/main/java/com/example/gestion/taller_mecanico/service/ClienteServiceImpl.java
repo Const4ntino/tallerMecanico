@@ -6,6 +6,7 @@ import com.example.gestion.taller_mecanico.exceptions.UsuarioNotFoundException;
 import com.example.gestion.taller_mecanico.mapper.ClienteMapper;
 import com.example.gestion.taller_mecanico.model.dto.ClienteRequest;
 import com.example.gestion.taller_mecanico.model.dto.ClienteResponse;
+import com.example.gestion.taller_mecanico.model.dto.UsuarioClienteRequest;
 import com.example.gestion.taller_mecanico.model.entity.Cliente;
 import com.example.gestion.taller_mecanico.model.entity.Taller;
 import com.example.gestion.taller_mecanico.model.entity.Usuario;
@@ -13,10 +14,13 @@ import com.example.gestion.taller_mecanico.repository.ClienteRepository;
 import com.example.gestion.taller_mecanico.repository.TallerRepository;
 import com.example.gestion.taller_mecanico.repository.UsuarioRepository;
 import com.example.gestion.taller_mecanico.specification.ClienteSpecification;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -31,6 +35,7 @@ public class ClienteServiceImpl implements ClienteService {
     private final UsuarioRepository usuarioRepository;
     private final TallerRepository tallerRepository;
     private final ClienteMapper clienteMapper;
+    private final PasswordEncoder passwordEncoder;
 
     @Override
     public List<ClienteResponse> findAll() {
@@ -100,6 +105,43 @@ public class ClienteServiceImpl implements ClienteService {
             throw new ClienteNotFoundException("Cliente no encontrado con ID: " + id);
         }
         clienteRepository.deleteById(id);
+    }
+
+    @Override
+    public ClienteResponse getMisDatos() {
+        Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Cliente cliente = clienteRepository.findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado para el usuario autenticado."));
+        return clienteMapper.toClienteResponse(cliente);
+    }
+
+    @Transactional
+    @Override
+    public ClienteResponse updateMisDatos(UsuarioClienteRequest usuarioClienteRequest) {
+        try {
+            Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Cliente cliente = clienteRepository.findByUsuarioId(usuario.getId())
+                    .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado para el usuario autenticado."));
+
+            usuario.setNombreCompleto(usuarioClienteRequest.getNombreCompleto());
+            usuario.setCorreo(usuarioClienteRequest.getCorreo());
+            usuario.setUsername(usuarioClienteRequest.getUsername());
+
+            if (usuarioClienteRequest.getContrasena() != null &&
+                    !usuarioClienteRequest.getContrasena().trim().isEmpty()) {
+                usuario.setPassword(passwordEncoder.encode(usuarioClienteRequest.getContrasena()));
+            }
+
+            cliente.setTelefono(usuarioClienteRequest.getTelefono());
+            cliente.setDireccion(usuarioClienteRequest.getDireccion());
+
+            usuarioRepository.save(usuario);
+            clienteRepository.save(cliente);
+
+            return clienteMapper.toClienteResponse(cliente);
+        } catch (Exception ex) {
+            throw new RuntimeException("Error al actualizar los datos del cliente", ex);
+        }
     }
 
     @Override

@@ -60,6 +60,11 @@ public class DashboardServiceImpl implements DashboardService {
                                 Collectors.reducing(BigDecimal.ZERO, row -> (BigDecimal) row[0], BigDecimal::add)
                         ));
             }
+
+            // Sumar el total de ingresos siempre, aunque haya groupBy
+            totalIngresos = ingresosData.stream()
+                    .map(row -> (BigDecimal) row[0])
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
         } else {
             // Si no hay groupBy, sumar todos los ingresos para el total general
             totalIngresos = ingresosData.stream()
