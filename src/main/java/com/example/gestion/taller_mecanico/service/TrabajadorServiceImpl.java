@@ -1,11 +1,13 @@
 package com.example.gestion.taller_mecanico.service;
 
+import com.example.gestion.taller_mecanico.exceptions.ClienteNotFoundException;
 import com.example.gestion.taller_mecanico.exceptions.TallerNotFoundException;
 import com.example.gestion.taller_mecanico.exceptions.TrabajadorNotFoundException;
 import com.example.gestion.taller_mecanico.exceptions.UsuarioNotFoundException;
 import com.example.gestion.taller_mecanico.mapper.TrabajadorMapper;
 import com.example.gestion.taller_mecanico.model.dto.TrabajadorRequest;
 import com.example.gestion.taller_mecanico.model.dto.TrabajadorResponse;
+import com.example.gestion.taller_mecanico.model.entity.Cliente;
 import com.example.gestion.taller_mecanico.model.entity.Taller;
 import com.example.gestion.taller_mecanico.model.entity.Trabajador;
 import com.example.gestion.taller_mecanico.model.entity.Usuario;
@@ -17,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification; // Importar Specification
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -98,5 +101,21 @@ public class TrabajadorServiceImpl implements TrabajadorService {
     public Page<TrabajadorResponse> findTrabajadoresByFilters(String search, String especialidad, Long tallerId, String rol, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable) {
         Specification<Trabajador> spec = TrabajadorSpecification.filterTrabajadores(search, especialidad, tallerId, rol, fechaCreacionDesde, fechaCreacionHasta);
         return trabajadorRepository.findAll(spec, pageable).map(trabajadorMapper::toTrabajadorResponse);
+    }
+
+    @Override
+    public Long obtenerTallerIdPorUsuarioId() {
+        Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Trabajador trabajador = trabajadorRepository.findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new TrabajadorNotFoundException("Trabajador no encontrado para el usuario autenticado."));
+
+        Long longIdTaller;
+        if (trabajador.getTaller().getId() == null ||  trabajador.getTaller().getId() == 0) {
+            longIdTaller = 0L;
+        } else {
+            longIdTaller = trabajador.getTaller().getId();
+        }
+
+        return longIdTaller;
     }
 }

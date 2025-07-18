@@ -30,5 +30,7 @@ public class ServicioRequest {
     @DecimalMin(value = "0.0", inclusive = true)
     private BigDecimal precioBase;
 
+    private String estado;
+
     private BigDecimal duracionEstimadaHoras;
 }

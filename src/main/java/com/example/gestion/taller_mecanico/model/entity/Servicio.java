@@ -1,5 +1,7 @@
 package com.example.gestion.taller_mecanico.model.entity;
 
+import com.example.gestion.taller_mecanico.utils.enums.ServicioEstado;
+import com.example.gestion.taller_mecanico.utils.enums.TallerEstado;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -36,6 +38,10 @@ public class Servicio {
 
     @Column(name = "duracion_estimada_horas", precision = 5, scale = 2)
     private BigDecimal duracionEstimadaHoras;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ServicioEstado estado;
 
     @Column(name = "fecha_creacion", nullable = false)
     private LocalDateTime fechaCreacion;

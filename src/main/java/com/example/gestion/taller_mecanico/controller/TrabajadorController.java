@@ -75,4 +75,13 @@ public class TrabajadorController {
         );
         return ResponseEntity.ok(trabajadores);
     }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR_TALLER')")
+    @PutMapping("/mi-taller")
+    public ResponseEntity<Long> obtenerMiTaller() {
+
+        // Aquí asumo que el usuario está relacionado con un Trabajador que a su vez tiene un Taller
+        Long tallerId = trabajadorService.obtenerTallerIdPorUsuarioId();
+        return ResponseEntity.ok(tallerId);
+    }
 }

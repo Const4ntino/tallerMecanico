@@ -17,4 +17,5 @@ public interface TrabajadorService {
     TrabajadorResponse update(Long id, TrabajadorRequest trabajadorRequest);
     void deleteById(Long id);
     Page<TrabajadorResponse> findTrabajadoresByFilters(String search, String especialidad, Long tallerId, String rol, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable);
+    Long obtenerTallerIdPorUsuarioId();
 }

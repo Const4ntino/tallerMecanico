@@ -14,6 +14,8 @@ import com.example.gestion.taller_mecanico.repository.ServicioRepository;
 import com.example.gestion.taller_mecanico.repository.TallerRepository;
 import com.example.gestion.taller_mecanico.repository.TrabajadorRepository;
 import com.example.gestion.taller_mecanico.specification.ServicioSpecification;
+import com.example.gestion.taller_mecanico.utils.enums.ServicioEstado;
+import com.example.gestion.taller_mecanico.utils.enums.TallerEstado;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -58,6 +60,7 @@ public class ServicioServiceImpl implements ServicioService {
                 .nombre(servicioRequest.getNombre())
                 .descripcion(servicioRequest.getDescripcion())
                 .precioBase(servicioRequest.getPrecioBase())
+                .estado(ServicioEstado.valueOf(servicioRequest.getEstado().toUpperCase()))
                 .duracionEstimadaHoras(servicioRequest.getDuracionEstimadaHoras())
                 .build();
         return servicioMapper.toServicioResponse(servicioRepository.save(servicio));
@@ -74,6 +77,7 @@ public class ServicioServiceImpl implements ServicioService {
                     servicio.setNombre(servicioRequest.getNombre());
                     servicio.setDescripcion(servicioRequest.getDescripcion());
                     servicio.setPrecioBase(servicioRequest.getPrecioBase());
+                    servicio.setEstado(ServicioEstado.valueOf(servicioRequest.getEstado().toUpperCase()));
                     servicio.setDuracionEstimadaHoras(servicioRequest.getDuracionEstimadaHoras());
                     return servicioMapper.toServicioResponse(servicioRepository.save(servicio));
                 }).orElseThrow(() -> new ServicioNotFoundException("Servicio no encontrado con ID: " + id));

@@ -20,6 +20,7 @@ public class ServicioResponse {
     private String descripcion;
     private BigDecimal precioBase;
     private BigDecimal duracionEstimadaHoras;
+    private String estado;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
 }
