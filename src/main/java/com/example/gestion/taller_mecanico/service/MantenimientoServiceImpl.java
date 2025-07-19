@@ -5,7 +5,6 @@ import com.example.gestion.taller_mecanico.mapper.MantenimientoMapper;
 import com.example.gestion.taller_mecanico.mapper.MantenimientoProductoMapper;
 import com.example.gestion.taller_mecanico.model.dto.MantenimientoRequest;
 import com.example.gestion.taller_mecanico.model.dto.MantenimientoResponse;
-import com.example.gestion.taller_mecanico.model.dto.MantenimientoProductoResponse;
 import com.example.gestion.taller_mecanico.model.entity.*;
 import com.example.gestion.taller_mecanico.repository.*;
 import com.example.gestion.taller_mecanico.specification.MantenimientoSpecification;
@@ -39,6 +38,7 @@ public class MantenimientoServiceImpl implements MantenimientoService {
     private final MantenimientoMapper mantenimientoMapper;
     private final MantenimientoProductoMapper mantenimientoProductoMapper;
     private final AlertaRepository alertaRepository;
+    private final FacturaRepository facturaRepository;
 
     @Override
     public List<MantenimientoResponse> findAll() {
@@ -299,10 +299,10 @@ public class MantenimientoServiceImpl implements MantenimientoService {
     @Override
     public Page<MantenimientoResponse> findMantenimientosByFilters(String search, Long vehiculoId, Long servicioId,
             Long trabajadorId, String estado, LocalDateTime fechaInicioDesde, LocalDateTime fechaInicioHasta,
-            LocalDateTime fechaFinDesde, LocalDateTime fechaFinHasta, Pageable pageable) {
+            LocalDateTime fechaFinDesde, LocalDateTime fechaFinHasta, Boolean estaFacturado, Pageable pageable) {
         Specification<Mantenimiento> spec = MantenimientoSpecification.filterMantenimientos(search, vehiculoId,
                 servicioId, trabajadorId, estado, fechaInicioDesde, fechaInicioHasta, fechaFinDesde, fechaFinHasta,
-                null);
+                null, estaFacturado);
         return mantenimientoRepository.findAll(spec, pageable).map(this::mapMantenimientoToResponse);
     }
 
@@ -359,6 +359,11 @@ public class MantenimientoServiceImpl implements MantenimientoService {
         response.setProductosUsados(productosUsados.stream()
                 .map(mantenimientoProductoMapper::toMantenimientoProductoResponse)
                 .collect(Collectors.toList()));
+                
+        // Verificar si el mantenimiento está facturado
+        boolean estaFacturado = facturaRepository.existsByMantenimientoId(mantenimiento.getId());
+        response.setEstaFacturado(estaFacturado);
+        
         return response;
     }
 }

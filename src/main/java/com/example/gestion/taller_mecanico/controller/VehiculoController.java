@@ -82,9 +82,10 @@ public class VehiculoController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaCreacionDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaCreacionHasta,
+            @RequestParam(required = false) Boolean excluirVehiculosEnMantenimiento,
             Pageable pageable) {
         Page<VehiculoResponse> vehiculos = vehiculoService.findVehiculosByFilters(
-                search, clienteId, tallerAsignadoId, estado, fechaCreacionDesde, fechaCreacionHasta, pageable
+                search, clienteId, tallerAsignadoId, estado, fechaCreacionDesde, fechaCreacionHasta, excluirVehiculosEnMantenimiento, pageable
         );
         return ResponseEntity.ok(vehiculos);
     }

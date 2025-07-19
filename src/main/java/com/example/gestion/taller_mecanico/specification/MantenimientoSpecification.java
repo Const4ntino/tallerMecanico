@@ -6,8 +6,10 @@ import com.example.gestion.taller_mecanico.model.entity.Servicio;
 import com.example.gestion.taller_mecanico.model.entity.Trabajador;
 import com.example.gestion.taller_mecanico.model.entity.Cliente;
 import com.example.gestion.taller_mecanico.model.entity.Usuario;
+import com.example.gestion.taller_mecanico.model.entity.Factura;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
@@ -16,6 +18,9 @@ import java.util.List;
 
 public class MantenimientoSpecification {
 
+    /**
+     * Método sobrecargado para mantener compatibilidad con el código existente
+     */
     public static Specification<Mantenimiento> filterMantenimientos(
             String search,
             Long vehiculoId,
@@ -27,6 +32,27 @@ public class MantenimientoSpecification {
             LocalDateTime fechaFinDesde,
             LocalDateTime fechaFinHasta,
             Long clienteId // Para filtrar mantenimientos de un cliente específico
+    ) {
+        // Llamar al método completo con estaFacturado como null
+        return filterMantenimientos(search, vehiculoId, servicioId, trabajadorId, estado,
+                fechaInicioDesde, fechaInicioHasta, fechaFinDesde, fechaFinHasta, clienteId, null);
+    }
+    
+    /**
+     * Método con el nuevo parámetro estaFacturado para filtrar mantenimientos facturados o no
+     */
+    public static Specification<Mantenimiento> filterMantenimientos(
+            String search,
+            Long vehiculoId,
+            Long servicioId,
+            Long trabajadorId,
+            String estado,
+            LocalDateTime fechaInicioDesde,
+            LocalDateTime fechaInicioHasta,
+            LocalDateTime fechaFinDesde,
+            LocalDateTime fechaFinHasta,
+            Long clienteId, // Para filtrar mantenimientos de un cliente específico
+            Boolean estaFacturado // Para filtrar mantenimientos que ya están facturados o no
     ) {
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -82,6 +108,24 @@ public class MantenimientoSpecification {
             if (clienteId != null) {
                 Join<Mantenimiento, Vehiculo> vehiculoJoin = root.join("vehiculo");
                 predicates.add(criteriaBuilder.equal(vehiculoJoin.get("cliente").get("id"), clienteId));
+            }
+
+            // Filtrar por mantenimientos facturados o no facturados
+            if (estaFacturado != null && query != null) {
+                // Crear una subconsulta para verificar si existe una factura para este mantenimiento
+                Subquery<Long> facturaSubquery = query.subquery(Long.class);
+                jakarta.persistence.criteria.Root<Factura> facturaRoot = facturaSubquery.from(Factura.class);
+                
+                facturaSubquery.select(facturaRoot.get("id"))
+                    .where(criteriaBuilder.equal(facturaRoot.get("mantenimiento"), root));
+                
+                if (estaFacturado) {
+                    // Si estaFacturado es true, buscar mantenimientos que tengan factura
+                    predicates.add(criteriaBuilder.exists(facturaSubquery));
+                } else {
+                    // Si estaFacturado es false, buscar mantenimientos que NO tengan factura
+                    predicates.add(criteriaBuilder.not(criteriaBuilder.exists(facturaSubquery)));
+                }
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

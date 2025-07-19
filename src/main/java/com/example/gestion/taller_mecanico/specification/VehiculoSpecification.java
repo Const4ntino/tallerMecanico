@@ -4,12 +4,16 @@ import com.example.gestion.taller_mecanico.model.entity.Vehiculo;
 import com.example.gestion.taller_mecanico.model.entity.Cliente;
 import com.example.gestion.taller_mecanico.model.entity.Usuario;
 import com.example.gestion.taller_mecanico.model.entity.Taller;
+import com.example.gestion.taller_mecanico.model.entity.Mantenimiento;
+import com.example.gestion.taller_mecanico.utils.enums.MantenimientoEstado;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class VehiculoSpecification {
@@ -20,7 +24,8 @@ public class VehiculoSpecification {
             Long tallerAsignadoId,
             String estado,
             LocalDateTime fechaCreacionDesde,
-            LocalDateTime fechaCreacionHasta) {
+            LocalDateTime fechaCreacionHasta,
+            Boolean excluirVehiculosEnMantenimiento) {
 
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -62,6 +67,28 @@ public class VehiculoSpecification {
 
             if (fechaCreacionHasta != null) {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("fechaCreacion"), fechaCreacionHasta));
+            }
+            
+            // Excluir vehículos que están en mantenimientos con estados específicos
+            if (Boolean.TRUE.equals(excluirVehiculosEnMantenimiento)) {
+                Subquery<Long> mantenimientoSubquery = query.subquery(Long.class);
+                jakarta.persistence.criteria.Root<Mantenimiento> mantenimientoRoot = mantenimientoSubquery.from(Mantenimiento.class);
+                
+                List<String> estadosExcluidos = Arrays.asList(
+                    MantenimientoEstado.SOLICITADO.toString(),
+                    MantenimientoEstado.EN_PROCESO.toString(),
+                    MantenimientoEstado.PENDIENTE.toString()
+                );
+                
+                mantenimientoSubquery.select(mantenimientoRoot.get("vehiculo").get("id"))
+                    .where(
+                        criteriaBuilder.and(
+                            criteriaBuilder.equal(mantenimientoRoot.get("vehiculo"), root),
+                            mantenimientoRoot.get("estado").in(estadosExcluidos)
+                        )
+                    );
+                
+                predicates.add(criteriaBuilder.not(criteriaBuilder.exists(mantenimientoSubquery)));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

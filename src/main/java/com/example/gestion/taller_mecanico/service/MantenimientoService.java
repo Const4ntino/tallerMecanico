@@ -14,7 +14,7 @@ public interface MantenimientoService {
     MantenimientoResponse save(MantenimientoRequest mantenimientoRequest);
     MantenimientoResponse update(Long id, MantenimientoRequest mantenimientoRequest);
     void deleteById(Long id);
-    Page<MantenimientoResponse> findMantenimientosByFilters(String search, Long vehiculoId, Long servicioId, Long trabajadorId, String estado, LocalDateTime fechaInicioDesde, LocalDateTime fechaInicioHasta, LocalDateTime fechaFinDesde, LocalDateTime fechaFinHasta, Pageable pageable);
+    Page<MantenimientoResponse> findMantenimientosByFilters(String search, Long vehiculoId, Long servicioId, Long trabajadorId, String estado, LocalDateTime fechaInicioDesde, LocalDateTime fechaInicioHasta, LocalDateTime fechaFinDesde, LocalDateTime fechaFinHasta, Boolean estaFacturado, Pageable pageable);
     Page<MantenimientoResponse> findMyMantenimientosByFilters(String search, Long vehiculoId, String estado, LocalDateTime fechaInicioDesde, LocalDateTime fechaInicioHasta, LocalDateTime fechaFinDesde, LocalDateTime fechaFinHasta, Pageable pageable);
     Page<MantenimientoResponse> findMantenimientosByTallerId(Long tallerId, String search, Long vehiculoId, Long servicioId, Long trabajadorId, String estado, LocalDateTime fechaInicioDesde, LocalDateTime fechaInicioHasta, LocalDateTime fechaFinDesde, LocalDateTime fechaFinHasta, Pageable pageable);
     Page<MantenimientoResponse> findAssignedMantenimientos(String search, Long vehiculoId, String estado, LocalDateTime fechaInicioDesde, LocalDateTime fechaInicioHasta, LocalDateTime fechaFinDesde, LocalDateTime fechaFinHasta, Pageable pageable);

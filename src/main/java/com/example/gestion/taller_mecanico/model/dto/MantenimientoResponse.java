@@ -26,4 +26,5 @@ public class MantenimientoResponse {
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
     private List<MantenimientoProductoResponse> productosUsados;
+    private Boolean estaFacturado;
 }

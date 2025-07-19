@@ -16,4 +16,7 @@ public interface FacturaRepository extends JpaRepository<Factura, Long>, JpaSpec
 
     @Query("SELECT f.total, f.fechaEmision FROM Factura f")
     List<Object[]> findTotalIngresosAndGroupByDate();
+    
+    // Verificar si existe una factura para un mantenimiento específico
+    boolean existsByMantenimientoId(Long mantenimientoId);
 }

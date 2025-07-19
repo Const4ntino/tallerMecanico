@@ -96,9 +96,10 @@ public class ClienteController {
     public ResponseEntity<Page<VehiculoResponse>> findMyVehiculos(
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String estado,
+            @RequestParam(required = false) Boolean excluirVehiculosEnMantenimiento,
             Pageable pageable) {
         Page<VehiculoResponse> vehiculos = vehiculoService.findMyVehiculosByFilters(
-                search, estado, pageable
+                search, estado, excluirVehiculosEnMantenimiento, pageable
         );
         return ResponseEntity.ok(vehiculos);
     }

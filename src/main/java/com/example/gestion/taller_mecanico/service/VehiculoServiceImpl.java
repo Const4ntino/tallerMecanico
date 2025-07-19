@@ -126,18 +126,18 @@ public class VehiculoServiceImpl implements VehiculoService {
     }
 
     @Override
-    public Page<VehiculoResponse> findVehiculosByFilters(String search, Long clienteId, Long tallerAsignadoId, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable) {
-        Specification<Vehiculo> spec = VehiculoSpecification.filterVehiculos(search, clienteId, tallerAsignadoId, estado, fechaCreacionDesde, fechaCreacionHasta);
+    public Page<VehiculoResponse> findVehiculosByFilters(String search, Long clienteId, Long tallerAsignadoId, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Boolean excluirVehiculosEnMantenimiento, Pageable pageable) {
+        Specification<Vehiculo> spec = VehiculoSpecification.filterVehiculos(search, clienteId, tallerAsignadoId, estado, fechaCreacionDesde, fechaCreacionHasta, excluirVehiculosEnMantenimiento);
         return vehiculoRepository.findAll(spec, pageable).map(vehiculoMapper::toVehiculoResponse);
     }
 
     @Override
-    public Page<VehiculoResponse> findMyVehiculosByFilters(String search, String estado, Pageable pageable) {
+    public Page<VehiculoResponse> findMyVehiculosByFilters(String search, String estado, Boolean excluirVehiculosEnMantenimiento, Pageable pageable) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Cliente cliente = clienteRepository.findByUsuarioId(usuario.getId())
                 .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado para el usuario autenticado."));
 
-        Specification<Vehiculo> spec = VehiculoSpecification.filterVehiculos(search, cliente.getId(), null, estado, null, null);
+        Specification<Vehiculo> spec = VehiculoSpecification.filterVehiculos(search, cliente.getId(), null, estado, null, null, excluirVehiculosEnMantenimiento);
         return vehiculoRepository.findAll(spec, pageable).map(vehiculoMapper::toVehiculoResponse);
     }
 

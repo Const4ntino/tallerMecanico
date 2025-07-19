@@ -67,9 +67,10 @@ public class MantenimientoController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaInicioHasta,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFinDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime fechaFinHasta,
+            @RequestParam(required = false) Boolean estaFacturado,
             Pageable pageable) {
         Page<MantenimientoResponse> mantenimientos = mantenimientoService.findMantenimientosByFilters(
-                search, vehiculoId, servicioId, trabajadorId, estado, fechaInicioDesde, fechaInicioHasta, fechaFinDesde, fechaFinHasta, pageable
+                search, vehiculoId, servicioId, trabajadorId, estado, fechaInicioDesde, fechaInicioHasta, fechaFinDesde, fechaFinHasta, estaFacturado, pageable
         );
         return ResponseEntity.ok(mantenimientos);
     }

@@ -17,8 +17,8 @@ public interface VehiculoService {
     VehiculoResponse update(Long id, VehiculoRequest vehiculoRequest);
     VehiculoResponse saveClientVehiculo(VehiculoClientRequest vehiculoClientRequest);
     void deleteById(Long id);
-    Page<VehiculoResponse> findVehiculosByFilters(String search, Long clienteId, Long tallerAsignadoId, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable);
-    Page<VehiculoResponse> findMyVehiculosByFilters(String search, String estado, Pageable pageable);
+    Page<VehiculoResponse> findVehiculosByFilters(String search, Long clienteId, Long tallerAsignadoId, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Boolean excluirVehiculosEnMantenimiento, Pageable pageable);
+    Page<VehiculoResponse> findMyVehiculosByFilters(String search, String estado, Boolean excluirVehiculosEnMantenimiento, Pageable pageable);
     VehiculoResponse updateClientVehiculo(Long id, VehiculoClientRequest vehiculoClientRequest);
     VehiculoResponse updateEstadoVehiculo(Long id, String estadoVehiculo);
 }
