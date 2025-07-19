@@ -15,6 +15,6 @@ public interface ServicioService {
     ServicioResponse save(ServicioRequest servicioRequest);
     ServicioResponse update(Long id, ServicioRequest servicioRequest);
     void deleteById(Long id);
-    Page<ServicioResponse> findServiciosByFilters(String search, Long tallerId, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, Pageable pageable);
-    Page<ServicioResponse> findMyTallerServiciosByFilters(String search, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, Pageable pageable);
+    Page<ServicioResponse> findServiciosByFilters(String search, Long tallerId, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, String estado, Pageable pageable);
+    Page<ServicioResponse> findMyTallerServiciosByFilters(String search, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, String estado, Pageable pageable);
 }

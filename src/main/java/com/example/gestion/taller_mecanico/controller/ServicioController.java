@@ -62,9 +62,10 @@ public class ServicioController {
             @RequestParam(required = false) BigDecimal maxPrecioBase,
             @RequestParam(required = false) BigDecimal minDuracionEstimadaHoras,
             @RequestParam(required = false) BigDecimal maxDuracionEstimadaHoras,
+            @RequestParam(required = false) String estado,
             Pageable pageable) {
         Page<ServicioResponse> servicios = servicioService.findServiciosByFilters(
-                search, tallerId, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras, pageable
+                search, tallerId, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras, estado, pageable
         );
         return ResponseEntity.ok(servicios);
     }
@@ -77,9 +78,10 @@ public class ServicioController {
             @RequestParam(required = false) BigDecimal maxPrecioBase,
             @RequestParam(required = false) BigDecimal minDuracionEstimadaHoras,
             @RequestParam(required = false) BigDecimal maxDuracionEstimadaHoras,
+            @RequestParam(required = false) String estado,
             Pageable pageable) {
         Page<ServicioResponse> servicios = servicioService.findMyTallerServiciosByFilters(
-                search, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras, pageable
+                search, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras, estado, pageable
         );
         return ResponseEntity.ok(servicios);
     }

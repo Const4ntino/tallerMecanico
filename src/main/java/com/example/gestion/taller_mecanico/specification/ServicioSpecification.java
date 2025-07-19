@@ -18,7 +18,8 @@ public class ServicioSpecification {
             BigDecimal minPrecioBase,
             BigDecimal maxPrecioBase,
             BigDecimal minDuracionEstimadaHoras,
-            BigDecimal maxDuracionEstimadaHoras) {
+            BigDecimal maxDuracionEstimadaHoras,
+            String estado) {
 
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -50,6 +51,11 @@ public class ServicioSpecification {
 
             if (maxDuracionEstimadaHoras != null) {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("duracionEstimadaHoras"), maxDuracionEstimadaHoras));
+            }
+            
+            // Filtro por estado
+            if (estado != null && !estado.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("estado"), estado));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));

@@ -15,7 +15,6 @@ import com.example.gestion.taller_mecanico.repository.TallerRepository;
 import com.example.gestion.taller_mecanico.repository.TrabajadorRepository;
 import com.example.gestion.taller_mecanico.specification.ServicioSpecification;
 import com.example.gestion.taller_mecanico.utils.enums.ServicioEstado;
-import com.example.gestion.taller_mecanico.utils.enums.TallerEstado;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -92,20 +91,20 @@ public class ServicioServiceImpl implements ServicioService {
     }
 
     @Override
-    public Page<ServicioResponse> findServiciosByFilters(String search, Long tallerId, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, Pageable pageable) {
-        Specification<Servicio> spec = ServicioSpecification.filterServicios(search, tallerId, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras);
+    public Page<ServicioResponse> findServiciosByFilters(String search, Long tallerId, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, String estado, Pageable pageable) {
+        Specification<Servicio> spec = ServicioSpecification.filterServicios(search, tallerId, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras, estado);
         return servicioRepository.findAll(spec, pageable).map(servicioMapper::toServicioResponse);
     }
 
     @Override
-    public Page<ServicioResponse> findMyTallerServiciosByFilters(String search, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, Pageable pageable) {
+    public Page<ServicioResponse> findMyTallerServiciosByFilters(String search, BigDecimal minPrecioBase, BigDecimal maxPrecioBase, BigDecimal minDuracionEstimadaHoras, BigDecimal maxDuracionEstimadaHoras, String estado, Pageable pageable) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Trabajador trabajador = trabajadorRepository.findByUsuarioId(usuario.getId())
                 .orElseThrow(() -> new TrabajadorNotFoundException("Trabajador no encontrado para el usuario autenticado."));
 
         Long tallerId = trabajador.getTaller().getId(); // Obtener el ID del taller del trabajador autenticado
 
-        Specification<Servicio> spec = ServicioSpecification.filterServicios(search, tallerId, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras);
+        Specification<Servicio> spec = ServicioSpecification.filterServicios(search, tallerId, minPrecioBase, maxPrecioBase, minDuracionEstimadaHoras, maxDuracionEstimadaHoras, estado);
         return servicioRepository.findAll(spec, pageable).map(servicioMapper::toServicioResponse);
     }
 }
