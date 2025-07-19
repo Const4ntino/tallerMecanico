@@ -23,9 +23,15 @@ public class FacturaRequest {
     @NotNull
     private Long tallerId;
 
-    
-
     private String detalles;
 
     private String pdfUrl;
+
+    @NotNull
+    private String metodoPago;
+
+    private String nroOperacion;
+
+    private String imagenOperacion;
 }
+

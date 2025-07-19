@@ -1,5 +1,6 @@
 package com.example.gestion.taller_mecanico.model.entity;
 
+import com.example.gestion.taller_mecanico.utils.enums.MetodoPago;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -45,6 +46,16 @@ public class Factura {
 
     @Column(name = "pdf_url", columnDefinition = "TEXT")
     private String pdfUrl;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "metodo_pago", nullable = false, length = 50)
+    private MetodoPago metodoPago;
+
+    @Column(name = "nro_operacion")
+    private String nroOperacion;
+
+    @Column(name = "imagen_operacion", columnDefinition = "TEXT")
+    private String imagenOperacion;
 
     @PrePersist
     protected void onCreate() {

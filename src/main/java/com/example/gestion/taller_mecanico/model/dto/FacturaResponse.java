@@ -1,5 +1,9 @@
 package com.example.gestion.taller_mecanico.model.dto;
 
+import com.example.gestion.taller_mecanico.utils.enums.MetodoPago;
+import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,4 +26,7 @@ public class FacturaResponse {
     private BigDecimal total;
     private String detalles;
     private String pdfUrl;
+    private String metodoPago;
+    private String nroOperacion;
+    private String imagenOperacion;
 }
