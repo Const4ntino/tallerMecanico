@@ -4,6 +4,7 @@ import com.example.gestion.taller_mecanico.model.entity.Factura;
 import com.example.gestion.taller_mecanico.model.entity.Mantenimiento;
 import com.example.gestion.taller_mecanico.model.entity.Cliente;
 import com.example.gestion.taller_mecanico.model.entity.Taller;
+import com.example.gestion.taller_mecanico.model.entity.Vehiculo;
 import com.example.gestion.taller_mecanico.utils.enums.MetodoPago;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
@@ -35,12 +36,16 @@ public class FacturaSpecification {
                 Join<Factura, Mantenimiento> mantenimientoJoin = root.join("mantenimiento");
                 Join<Factura, Cliente> clienteJoin = root.join("cliente");
                 Join<Factura, Taller> tallerJoin = root.join("taller");
+                // Agregamos join a Vehiculo para acceder a la placa
+                Join<Mantenimiento, Vehiculo> vehiculoJoin = mantenimientoJoin.join("vehiculo");
 
                 predicates.add(criteriaBuilder.or(
                         criteriaBuilder.like(criteriaBuilder.lower(mantenimientoJoin.get("observacionesCliente")), "%" + lowerCaseSearch + "%"),
                         criteriaBuilder.like(criteriaBuilder.lower(mantenimientoJoin.get("observacionesTrabajador")), "%" + lowerCaseSearch + "%"),
                         criteriaBuilder.like(criteriaBuilder.lower(clienteJoin.get("usuario").get("nombreCompleto")), "%" + lowerCaseSearch + "%"),
-                        criteriaBuilder.like(criteriaBuilder.lower(tallerJoin.get("nombre")), "%" + lowerCaseSearch + "%")
+                        criteriaBuilder.like(criteriaBuilder.lower(tallerJoin.get("nombre")), "%" + lowerCaseSearch + "%"),
+                        // Agregamos búsqueda por placa de vehículo
+                        criteriaBuilder.like(criteriaBuilder.lower(vehiculoJoin.get("placa")), "%" + lowerCaseSearch + "%")
                 ));
             }
 
