@@ -33,12 +33,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import com.example.gestion.taller_mecanico.service.PdfGeneratorService;
-import com.example.gestion.taller_mecanico.service.FileStorageService;
-import com.example.gestion.taller_mecanico.utils.enums.Rol;
+import com.example.gestion.taller_mecanico.utils.enums.MetodoPago;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -60,6 +58,7 @@ public class FacturaServiceImpl implements FacturaService {
     private final MantenimientoService mantenimientoService;
     private final PdfGeneratorService pdfGeneratorService;
     private final FileStorageService fileStorageService;
+    private final ArchivoService archivoService;
 
     @Override
     public List<FacturaResponse> findAll() {
@@ -78,6 +77,12 @@ public class FacturaServiceImpl implements FacturaService {
     @Override
     @Transactional
     public FacturaResponse save(FacturaRequest facturaRequest) {
+        return save(facturaRequest, null);
+    }
+    
+    @Override
+    @Transactional
+    public FacturaResponse save(FacturaRequest facturaRequest, MultipartFile imagenOperacion) {
         Mantenimiento mantenimiento = mantenimientoRepository.findById(facturaRequest.getMantenimientoId())
                 .orElseThrow(() -> new MantenimientoNotFoundException("Mantenimiento no encontrado con ID: " + facturaRequest.getMantenimientoId()));
 
@@ -98,6 +103,19 @@ public class FacturaServiceImpl implements FacturaService {
         Taller taller = tallerRepository.findById(facturaRequest.getTallerId())
                 .orElseThrow(() -> new TallerNotFoundException("Taller no encontrado con ID: " + facturaRequest.getTallerId()));
 
+        // Procesar la imagen de operación si se proporciona
+        String imagenOperacionUrl = null;
+        if (imagenOperacion != null && !imagenOperacion.isEmpty()) {
+            try {
+                imagenOperacionUrl = archivoService.subirImagen(imagenOperacion);
+            } catch (Exception e) {
+                throw new RuntimeException("Error al subir la imagen de operación", e);
+            }
+        } else {
+            // Si no hay imagen nueva pero hay URL en el request, mantener esa URL
+            imagenOperacionUrl = facturaRequest.getImagenOperacion();
+        }
+        
         Factura factura = Factura.builder()
                 .mantenimiento(mantenimiento)
                 .cliente(cliente)
@@ -105,6 +123,9 @@ public class FacturaServiceImpl implements FacturaService {
                 .total(totalCalculado) // Asignar el total calculado aquí
                 .detalles(facturaRequest.getDetalles())
                 .pdfUrl(null) // Inicialmente null, se actualizará después de generar el PDF
+                .metodoPago(Enum.valueOf(MetodoPago.class, facturaRequest.getMetodoPago()))
+                .nroOperacion(facturaRequest.getNroOperacion())
+                .imagenOperacion(imagenOperacionUrl)
                 .build();
         Factura savedFactura = facturaRepository.save(factura); // Guarda la factura inicialmente
 
@@ -133,6 +154,12 @@ public class FacturaServiceImpl implements FacturaService {
     @Override
     @Transactional
     public FacturaResponse update(Long id, FacturaRequest facturaRequest) {
+        return update(id, facturaRequest, null);
+    }
+    
+    @Override
+    @Transactional
+    public FacturaResponse update(Long id, FacturaRequest facturaRequest, MultipartFile imagenOperacion) {
         return facturaRepository.findById(id)
                 .map(facturaExistente -> {
                     Mantenimiento mantenimiento = mantenimientoRepository.findById(facturaRequest.getMantenimientoId())
@@ -155,12 +182,28 @@ public class FacturaServiceImpl implements FacturaService {
                     Taller taller = tallerRepository.findById(facturaRequest.getTallerId())
                             .orElseThrow(() -> new TallerNotFoundException("Taller no encontrado con ID: " + facturaRequest.getTallerId()));
 
+                    // Procesar la imagen de operación si se proporciona
+                    String imagenOperacionUrl = facturaExistente.getImagenOperacion(); // Mantener la URL existente por defecto
+                    if (imagenOperacion != null && !imagenOperacion.isEmpty()) {
+                        try {
+                            imagenOperacionUrl = archivoService.subirImagen(imagenOperacion);
+                        } catch (Exception e) {
+                            throw new RuntimeException("Error al subir la imagen de operación", e);
+                        }
+                    } else if (facturaRequest.getImagenOperacion() != null) {
+                        // Si no hay imagen nueva pero hay URL en el request, actualizar con esa URL
+                        imagenOperacionUrl = facturaRequest.getImagenOperacion();
+                    }
+                    
                     facturaExistente.setMantenimiento(mantenimiento);
                     facturaExistente.setCliente(cliente);
                     facturaExistente.setTaller(taller);
                     facturaExistente.setTotal(totalCalculado); // Actualizar el total calculado
                     facturaExistente.setDetalles(facturaRequest.getDetalles());
                     // No actualizamos pdfUrl directamente desde el request, se regenera si es necesario
+                    facturaExistente.setMetodoPago(Enum.valueOf(MetodoPago.class, facturaRequest.getMetodoPago()));
+                    facturaExistente.setNroOperacion(facturaRequest.getNroOperacion());
+                    facturaExistente.setImagenOperacion(imagenOperacionUrl);
 
                     Factura updatedFactura = facturaRepository.save(facturaExistente);
 
@@ -221,30 +264,30 @@ public class FacturaServiceImpl implements FacturaService {
     }
 
     @Override
-    public Page<FacturaResponse> findFacturasByFilters(String search, Long mantenimientoId, Long clienteId, Long tallerId, LocalDateTime fechaEmisionDesde, LocalDateTime fechaEmisionHasta, BigDecimal minTotal, BigDecimal maxTotal, Pageable pageable) {
-        Specification<Factura> spec = FacturaSpecification.filterFacturas(search, mantenimientoId, clienteId, tallerId, fechaEmisionDesde, fechaEmisionHasta, minTotal, maxTotal);
+    public Page<FacturaResponse> findFacturasByFilters(String search, Long mantenimientoId, Long clienteId, Long tallerId, LocalDateTime fechaEmisionDesde, LocalDateTime fechaEmisionHasta, BigDecimal minTotal, BigDecimal maxTotal, MetodoPago metodoPago, Pageable pageable) {
+        Specification<Factura> spec = FacturaSpecification.filterFacturas(search, mantenimientoId, clienteId, tallerId, fechaEmisionDesde, fechaEmisionHasta, minTotal, maxTotal, metodoPago);
         return facturaRepository.findAll(spec, pageable).map(facturaMapper::toFacturaResponse);
     }
 
     @Override
-    public Page<FacturaResponse> findMyFacturasByFilters(String search, Long mantenimientoId, LocalDateTime fechaEmisionDesde, LocalDateTime fechaEmisionHasta, BigDecimal minTotal, BigDecimal maxTotal, Pageable pageable) {
+    public Page<FacturaResponse> findMyFacturasByFilters(String search, Long mantenimientoId, LocalDateTime fechaEmisionDesde, LocalDateTime fechaEmisionHasta, BigDecimal minTotal, BigDecimal maxTotal, MetodoPago metodoPago, Pageable pageable) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Cliente cliente = clienteRepository.findByUsuarioId(usuario.getId())
                 .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado para el usuario autenticado."));
 
-        Specification<Factura> spec = FacturaSpecification.filterFacturas(search, mantenimientoId, cliente.getId(), null, fechaEmisionDesde, fechaEmisionHasta, minTotal, maxTotal);
+        Specification<Factura> spec = FacturaSpecification.filterFacturas(search, mantenimientoId, cliente.getId(), null, fechaEmisionDesde, fechaEmisionHasta, minTotal, maxTotal, metodoPago);
         return facturaRepository.findAll(spec, pageable).map(facturaMapper::toFacturaResponse);
     }
 
     @Override
-    public Page<FacturaResponse> findFacturasByTallerId(Long tallerId, String search, Long mantenimientoId, Long clienteId, LocalDateTime fechaEmisionDesde, LocalDateTime fechaEmisionHasta, BigDecimal minTotal, BigDecimal maxTotal, Pageable pageable) {
+    public Page<FacturaResponse> findFacturasByTallerId(Long tallerId, String search, Long mantenimientoId, Long clienteId, LocalDateTime fechaEmisionDesde, LocalDateTime fechaEmisionHasta, BigDecimal minTotal, BigDecimal maxTotal, MetodoPago metodoPago, Pageable pageable) {
         Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Trabajador trabajador = trabajadorRepository.findByUsuarioId(usuario.getId())
                 .orElseThrow(() -> new TrabajadorNotFoundException("Trabajador no encontrado para el usuario autenticado."));
 
         Long tallerAsignadoId = trabajador.getTaller().getId();
 
-        Specification<Factura> spec = FacturaSpecification.filterFacturas(search, mantenimientoId, clienteId, tallerAsignadoId, fechaEmisionDesde, fechaEmisionHasta, minTotal, maxTotal);
+        Specification<Factura> spec = FacturaSpecification.filterFacturas(search, mantenimientoId, clienteId, tallerAsignadoId, fechaEmisionDesde, fechaEmisionHasta, minTotal, maxTotal, metodoPago);
         return facturaRepository.findAll(spec, pageable).map(facturaMapper::toFacturaResponse);
     }
 

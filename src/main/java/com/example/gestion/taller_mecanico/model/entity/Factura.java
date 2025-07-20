@@ -47,6 +47,9 @@ public class Factura {
     @Column(name = "pdf_url", columnDefinition = "TEXT")
     private String pdfUrl;
 
+    @Column(name = "codigo_factura", nullable = false, unique = true, updatable = false)
+    private String codigoFactura;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "metodo_pago", nullable = false, length = 50)
     private MetodoPago metodoPago;

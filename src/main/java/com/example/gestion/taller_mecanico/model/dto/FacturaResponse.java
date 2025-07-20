@@ -26,6 +26,7 @@ public class FacturaResponse {
     private BigDecimal total;
     private String detalles;
     private String pdfUrl;
+    private String codigoFactura;
     private String metodoPago;
     private String nroOperacion;
     private String imagenOperacion;

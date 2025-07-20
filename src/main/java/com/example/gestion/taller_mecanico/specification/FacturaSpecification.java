@@ -4,6 +4,7 @@ import com.example.gestion.taller_mecanico.model.entity.Factura;
 import com.example.gestion.taller_mecanico.model.entity.Mantenimiento;
 import com.example.gestion.taller_mecanico.model.entity.Cliente;
 import com.example.gestion.taller_mecanico.model.entity.Taller;
+import com.example.gestion.taller_mecanico.utils.enums.MetodoPago;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
@@ -23,7 +24,8 @@ public class FacturaSpecification {
             LocalDateTime fechaEmisionDesde,
             LocalDateTime fechaEmisionHasta,
             BigDecimal minTotal,
-            BigDecimal maxTotal) {
+            BigDecimal maxTotal,
+            MetodoPago metodoPago) {
 
         return (root, query, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
@@ -68,6 +70,10 @@ public class FacturaSpecification {
 
             if (maxTotal != null) {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("total"), maxTotal));
+            }
+
+            if (metodoPago != null) {
+                predicates.add(criteriaBuilder.equal(root.get("metodoPago"), metodoPago));
             }
 
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
