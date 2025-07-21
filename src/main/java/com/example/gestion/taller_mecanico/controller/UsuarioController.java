@@ -25,25 +25,25 @@ public class UsuarioController {
 
     private final UsuarioService usuarioService;
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @GetMapping
     public ResponseEntity<List<UsuarioResponse>> findAll() {
         return ResponseEntity.ok(usuarioService.findAll());
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponse> findById(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.findById(id));
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @PostMapping
     public ResponseEntity<UsuarioResponse> save(@Valid @RequestBody UsuarioRequest usuarioRequest) {
         return new ResponseEntity<>(usuarioService.save(usuarioRequest), HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @PostMapping("/cliente")
     public ResponseEntity<UsuarioResponse> createUsuarioCliente(@Valid @RequestBody UsuarioClienteRequest request) {
         return new ResponseEntity<>(usuarioService.createUsuarioCliente(request), HttpStatus.CREATED);
@@ -55,20 +55,20 @@ public class UsuarioController {
         return new ResponseEntity<>(usuarioService.createUsuarioTrabajador(request), HttpStatus.CREATED);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponse> update(@PathVariable Long id, @Valid @RequestBody UsuarioRequest usuarioRequest) {
         return ResponseEntity.ok(usuarioService.update(id, usuarioRequest));
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteById(@PathVariable Long id) {
         usuarioService.deleteById(id);
         return ResponseEntity.noContent().build();
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @GetMapping("/filtrar")
     public ResponseEntity<Page<UsuarioResponse>> findUsuarios(
             @RequestParam(required = false) String search,
@@ -82,5 +82,17 @@ public class UsuarioController {
                 search, rol, fechaCreacionDesde, fechaCreacionHasta, fechaActualizacionDesde, fechaActualizacionHasta, pageable
         );
         return ResponseEntity.ok(usuarios);
+    }
+    
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
+    @GetMapping("/trabajadores-no-asignados")
+    public ResponseEntity<List<UsuarioResponse>> findTrabajadoresNoAsignados() {
+        return ResponseEntity.ok(usuarioService.findTrabajadoresNoAsignados());
+    }
+    
+    @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
+    @GetMapping("/clientes-no-asignados")
+    public ResponseEntity<List<UsuarioResponse>> findClientesNoAsignados() {
+        return ResponseEntity.ok(usuarioService.findClientesNoAsignados());
     }
 }

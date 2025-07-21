@@ -149,4 +149,18 @@ public class UsuarioServiceImpl implements UsuarioService {
                 fechaCreacionHasta, fechaActualizacionDesde, fechaActualizacionHasta);
         return usuarioRepository.findAll(spec, pageable).map(usuarioMapper::toUsuarioResponse);
     }
+    
+    @Override
+    public List<UsuarioResponse> findTrabajadoresNoAsignados() {
+        return usuarioRepository.findTrabajadoresNoAsignados().stream()
+                .map(usuarioMapper::toUsuarioResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
+    public List<UsuarioResponse> findClientesNoAsignados() {
+        return usuarioRepository.findClientesNoAsignados().stream()
+                .map(usuarioMapper::toUsuarioResponse)
+                .collect(Collectors.toList());
+    }
 }

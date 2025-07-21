@@ -20,4 +20,6 @@ public interface UsuarioService {
     UsuarioResponse createUsuarioTrabajador(UsuarioTrabajadorRequest request);
     void deleteById(Long id);
     Page<UsuarioResponse> findUsuariosByFilters(String search, String rol, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, LocalDateTime fechaActualizacionDesde, LocalDateTime fechaActualizacionHasta, Pageable pageable);
+    List<UsuarioResponse> findTrabajadoresNoAsignados();
+    List<UsuarioResponse> findClientesNoAsignados();
 }
