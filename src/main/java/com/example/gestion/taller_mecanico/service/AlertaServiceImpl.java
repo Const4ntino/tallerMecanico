@@ -240,4 +240,31 @@ public class AlertaServiceImpl implements AlertaService {
 
         return alertaRepository.findAll(spec, pageable).map(alertaMapper::toAlertaResponse);
     }
+    
+    @Override
+    public Long countMyNewAlertas() {
+        Usuario usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        
+        // Verificar que el usuario sea un cliente
+        if (usuario.getRol() != Rol.CLIENTE) {
+            return 0L;
+        }
+        
+        Cliente cliente = clienteRepository.findByUsuarioId(usuario.getId())
+                .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado para el usuario autenticado."));
+                
+        // Crear especificación para filtrar alertas nuevas del cliente
+        Specification<Alerta> spec = AlertaSpecification.filterAlertas(
+            null,           // search
+            null,           // vehiculoId
+            cliente.getId(), // clienteId
+            null,           // tallerId
+            null,           // tipo
+            AlertaEstado.NUEVA.name(), // estado = NUEVA
+            null,           // fechaCreacionDesde
+            null            // fechaCreacionHasta
+        );
+        
+        return alertaRepository.count(spec);
+    }
 }

@@ -130,4 +130,10 @@ public class AlertaController {
     public ResponseEntity<Page<AlertaResponse>> findPendingAlerts(Pageable pageable) {
         return ResponseEntity.ok(alertaService.findPendingAlerts(pageable));
     }
+    
+    @PreAuthorize("hasRole('CLIENTE')")
+    @GetMapping("/mis-alertas/nuevas/count")
+    public ResponseEntity<Long> countMyNewAlertas() {
+        return ResponseEntity.ok(alertaService.countMyNewAlertas());
+    }
 }

@@ -22,4 +22,5 @@ public interface AlertaService {
     Page<AlertaResponse> findAlertasByFilters(String search, Long vehiculoId, Long clienteId, Long tallerId, String tipo, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable);
     Page<AlertaResponse> findMyAlertasByFilters(String search, Long vehiculoId, String tipo, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable);
     Page<AlertaResponse> findAlertasByTallerId(Long tallerId, String search, Long vehiculoId, Long clienteId, String tipo, String estado, LocalDateTime fechaCreacionDesde, LocalDateTime fechaCreacionHasta, Pageable pageable);
+    Long countMyNewAlertas();
 }
