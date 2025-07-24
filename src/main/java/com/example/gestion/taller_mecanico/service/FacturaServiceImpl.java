@@ -40,6 +40,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -96,7 +97,18 @@ public class FacturaServiceImpl implements FacturaService {
             BigDecimal costoProducto = mp.getPrecioEnUso().multiply(BigDecimal.valueOf(mp.getCantidadUsada()));
             totalProductosUsados = totalProductosUsados.add(costoProducto);
         }
-        BigDecimal totalCalculado = precioBaseServicio.add(totalProductosUsados);
+        BigDecimal subtotal = precioBaseServicio.add(totalProductosUsados);
+        
+        // Calcular el total con IGV si corresponde
+        BigDecimal totalCalculado;
+        if (conIgv) {
+            // Si incluye IGV, calculamos el 18% y lo sumamos al subtotal
+            BigDecimal igv = subtotal.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+            totalCalculado = subtotal.add(igv);
+        } else {
+            // Si no incluye IGV, el total es igual al subtotal
+            totalCalculado = subtotal;
+        }
 
         Cliente cliente = clienteRepository.findById(facturaRequest.getClienteId())
                 .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con ID: " + facturaRequest.getClienteId()));
@@ -117,11 +129,17 @@ public class FacturaServiceImpl implements FacturaService {
             imagenOperacionUrl = facturaRequest.getImagenOperacion();
         }
         
+        // Solo usar el RUC si el tipo de comprobante es FACTURA
+        String rucToUse = null;
+        if ("FACTURA".equals(facturaRequest.getTipo()) && ruc != null && !ruc.isEmpty()) {
+            rucToUse = ruc;
+        }
+        
         Factura factura = Factura.builder()
                 .mantenimiento(mantenimiento)
                 .cliente(cliente)
                 .taller(taller)
-                .total(totalCalculado) // Asignar el total calculado aquí
+                .total(totalCalculado) // Asignar el total calculado con IGV si corresponde
                 .detalles(facturaRequest.getDetalles())
                 .pdfUrl(null) // Inicialmente null, se actualizará después de generar el PDF
                 .metodoPago(Enum.valueOf(MetodoPago.class, facturaRequest.getMetodoPago()))
@@ -129,12 +147,25 @@ public class FacturaServiceImpl implements FacturaService {
                 .imagenOperacion(imagenOperacionUrl)
                 .tipo(Enum.valueOf(TipoFactura.class, facturaRequest.getTipo()))
                 .build();
-        Factura savedFactura = facturaRepository.save(factura); // Guarda la factura inicialmente
+        
+        // Guardar la factura inicialmente
+        Factura savedFactura = facturaRepository.save(factura);
+        
+        // Recargar la factura desde la base de datos para obtener el código generado automáticamente
+        // Esto asegura que tengamos todos los campos actualizados, incluido el código de factura
+        final Long facturaId = savedFactura.getId(); // Crear una variable final para usar en la expresión lambda
+        Factura facturaGuardada = facturaRepository.findById(facturaId)
+                .orElseThrow(() -> new FacturaNotFoundException("Factura no encontrada con ID: " + facturaId));
+        FacturaResponse facturaResponse = facturaMapper.toFacturaResponse(factura);
+        // Imprimir para depuración
+        System.out.println("Id de factura generada" +  facturaId);
+        System.out.println("Id de factura generada" +  facturaResponse.getId());
+        System.out.println("Código de factura generado: " + facturaResponse.getCodigoFactura());
 
         // --- Generación y Subida del PDF ---
         try {
             // 1. Generar el PDF
-            byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(savedFactura, productosUsados, conIgv, ruc); // Pasa la factura y los productos usados
+            byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(savedFactura, productosUsados, conIgv, rucToUse); // Pasa la factura y los productos usados
 
             // 2. Subir el PDF y obtener la URL
             String pdfUrl = fileStorageService.storeFacturaPdf(pdfBytes, "factura_" + savedFactura.getId() + ".pdf");
@@ -176,7 +207,18 @@ public class FacturaServiceImpl implements FacturaService {
                         BigDecimal costoProducto = mp.getPrecioEnUso().multiply(BigDecimal.valueOf(mp.getCantidadUsada()));
                         totalProductosUsados = totalProductosUsados.add(costoProducto);
                     }
-                    BigDecimal totalCalculado = precioBaseServicio.add(totalProductosUsados);
+                    BigDecimal subtotal = precioBaseServicio.add(totalProductosUsados);
+                    
+                    // Calcular el total con IGV si corresponde
+                    BigDecimal totalCalculado;
+                    if (conIgv) {
+                        // Si incluye IGV, calculamos el 18% y lo sumamos al subtotal
+                        BigDecimal igv = subtotal.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+                        totalCalculado = subtotal.add(igv);
+                    } else {
+                        // Si no incluye IGV, el total es igual al subtotal
+                        totalCalculado = subtotal;
+                    }
 
                     Cliente cliente = clienteRepository.findById(facturaRequest.getClienteId())
                             .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con ID: " + facturaRequest.getClienteId()));
@@ -197,21 +239,38 @@ public class FacturaServiceImpl implements FacturaService {
                         imagenOperacionUrl = facturaRequest.getImagenOperacion();
                     }
                     
+                    // Solo usar el RUC si el tipo de comprobante es FACTURA
+                    String rucToUse = null;
+                    if ("FACTURA".equals(facturaRequest.getTipo()) && ruc != null && !ruc.isEmpty()) {
+                        rucToUse = ruc;
+                    }
+                    
                     facturaExistente.setMantenimiento(mantenimiento);
                     facturaExistente.setCliente(cliente);
                     facturaExistente.setTaller(taller);
-                    facturaExistente.setTotal(totalCalculado); // Actualizar el total calculado
+                    facturaExistente.setTotal(totalCalculado); // Actualizar el total calculado con IGV si corresponde
                     facturaExistente.setDetalles(facturaRequest.getDetalles());
                     // No actualizamos pdfUrl directamente desde el request, se regenera si es necesario
                     facturaExistente.setMetodoPago(Enum.valueOf(MetodoPago.class, facturaRequest.getMetodoPago()));
                     facturaExistente.setNroOperacion(facturaRequest.getNroOperacion());
                     facturaExistente.setImagenOperacion(imagenOperacionUrl);
+                    facturaExistente.setTipo(Enum.valueOf(TipoFactura.class, facturaRequest.getTipo()));
 
+                    // Guardar la factura actualizada
                     Factura updatedFactura = facturaRepository.save(facturaExistente);
+                    
+                    // Recargar la factura desde la base de datos para obtener el código generado automáticamente
+                    // Esto asegura que tengamos todos los campos actualizados, incluido el código de factura
+                    final Long facturaActualizadaId = updatedFactura.getId(); // Crear una variable final para usar en la expresión lambda
+                    updatedFactura = facturaRepository.findById(facturaActualizadaId)
+                            .orElseThrow(() -> new FacturaNotFoundException("No se encontró la factura con ID: " + facturaActualizadaId));
+                    
+                    // Imprimir para depuración
+                    System.out.println("Código de factura actualizado: " + updatedFactura.getCodigoFactura());
 
                     // --- Regeneración y Subida del PDF (si es necesario) ---
                     try {
-                        byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(updatedFactura, productosUsados, conIgv, ruc);
+                        byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(updatedFactura, productosUsados, conIgv, rucToUse);
                         String pdfUrl = fileStorageService.storeFacturaPdf(pdfBytes, "factura_" + updatedFactura.getId() + ".pdf");
                         updatedFactura.setPdfUrl(pdfUrl);
                         facturaRepository.save(updatedFactura);

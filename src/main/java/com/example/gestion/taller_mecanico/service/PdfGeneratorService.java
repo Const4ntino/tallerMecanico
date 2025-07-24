@@ -146,10 +146,11 @@ public class PdfGeneratorService {
             titleCell.setPaddingBottom(10);
             boletaTable.addCell(titleCell);
             
-            // Código de boleta o factura
+            // Código de boleta o factura - generar código basado en el ID de la factura
             String prefijo = (ruc != null && !ruc.isEmpty()) ? "FX" : "BX";
             String codigoFactura = prefijo + String.format("%02d", factura.getTaller().getId()) + "-" + 
                                    String.format("%08d", factura.getId());
+            System.out.println("codigoFactura generado: " + codigoFactura);
             PdfPCell codigoCell = new PdfPCell(new Paragraph(codigoFactura, fontSubtitle));
             codigoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
             codigoCell.setBorder(Rectangle.NO_BORDER);
