@@ -35,7 +35,7 @@ public class PdfGeneratorService {
     
     private final EmpresaRepository empresaRepository;
 
-    public byte[] generateFacturaPdf(Factura factura, List<MantenimientoProducto> productosUsados) {
+    public byte[] generateFacturaPdf(Factura factura, List<MantenimientoProducto> productosUsados, boolean conIgv, String ruc) {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 36, 36, 54, 36); // Márgenes: izquierda, derecha, superior, inferior
 
@@ -138,15 +138,17 @@ public class PdfGeneratorService {
             PdfPTable boletaTable = new PdfPTable(1);
             boletaTable.setWidthPercentage(100);
             
-            // Título de boleta
-            PdfPCell titleCell = new PdfPCell(new Paragraph("BOLETA DE VENTA ELECTRÓNICA", fontTitle));
+            // Título de boleta o factura según si hay RUC
+            String titulo = (ruc != null && !ruc.isEmpty()) ? "FACTURA ELECTRÓNICA" : "BOLETA DE VENTA ELECTRÓNICA";
+            PdfPCell titleCell = new PdfPCell(new Paragraph(titulo, fontTitle));
             titleCell.setHorizontalAlignment(Element.ALIGN_CENTER);
             titleCell.setBorder(Rectangle.NO_BORDER);
             titleCell.setPaddingBottom(10);
             boletaTable.addCell(titleCell);
             
-            // Código de boleta
-            String codigoFactura = "BX" + String.format("%02d", factura.getTaller().getId()) + "-" + 
+            // Código de boleta o factura
+            String prefijo = (ruc != null && !ruc.isEmpty()) ? "FX" : "BX";
+            String codigoFactura = prefijo + String.format("%02d", factura.getTaller().getId()) + "-" + 
                                    String.format("%08d", factura.getId());
             PdfPCell codigoCell = new PdfPCell(new Paragraph(codigoFactura, fontSubtitle));
             codigoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
@@ -162,8 +164,9 @@ public class PdfGeneratorService {
             infoTable.setWidths(new float[]{1, 1});
             infoTable.setSpacingBefore(20);
             
-            // Columna izquierda - Información del cliente
-            PdfPCell clienteHeaderCell = new PdfPCell(new Paragraph("NOMBRE CLIENTE:", fontBold));
+            // Columna izquierda - Información del cliente o RUC según corresponda
+            String clienteLabel = (ruc != null && !ruc.isEmpty()) ? "RAZÓN SOCIAL:" : "NOMBRE CLIENTE:";
+            PdfPCell clienteHeaderCell = new PdfPCell(new Paragraph(clienteLabel, fontBold));
             clienteHeaderCell.setBorder(Rectangle.NO_BORDER);
             infoTable.addCell(clienteHeaderCell);
             
@@ -172,8 +175,11 @@ public class PdfGeneratorService {
             fechaHeaderCell.setBorder(Rectangle.NO_BORDER);
             infoTable.addCell(fechaHeaderCell);
             
-            // Valor nombre cliente
-            PdfPCell clienteValueCell = new PdfPCell(new Paragraph(factura.getCliente().getUsuario().getNombreCompleto().toUpperCase(), fontNormal));
+            // Valor nombre cliente o razón social según corresponda
+            String clienteValue = (ruc != null && !ruc.isEmpty()) ? 
+                                  factura.getCliente().getUsuario().getNombreCompleto().toUpperCase() + " - RUC: " + ruc : 
+                                  factura.getCliente().getUsuario().getNombreCompleto().toUpperCase();
+            PdfPCell clienteValueCell = new PdfPCell(new Paragraph(clienteValue, fontNormal));
             clienteValueCell.setBorder(Rectangle.NO_BORDER);
             infoTable.addCell(clienteValueCell);
             
@@ -182,8 +188,9 @@ public class PdfGeneratorService {
             fechaValueCell.setBorder(Rectangle.NO_BORDER);
             infoTable.addCell(fechaValueCell);
             
-            // DNI
-            PdfPCell dniHeaderCell = new PdfPCell(new Paragraph("DNI:", fontBold));
+            // DNI o RUC
+            String documentoLabel = (ruc != null && !ruc.isEmpty()) ? "RUC:" : "DNI:";
+            PdfPCell dniHeaderCell = new PdfPCell(new Paragraph(documentoLabel, fontBold));
             dniHeaderCell.setBorder(Rectangle.NO_BORDER);
             dniHeaderCell.setPaddingTop(5);
             infoTable.addCell(dniHeaderCell);
@@ -194,10 +201,11 @@ public class PdfGeneratorService {
             metodoPagoHeaderCell.setPaddingTop(5);
             infoTable.addCell(metodoPagoHeaderCell);
             
-            // Valor DNI
-            String dni = factura.getCliente().getUsuario().getDni() != null ? 
-                         factura.getCliente().getUsuario().getDni() : "";
-            PdfPCell dniValueCell = new PdfPCell(new Paragraph(dni, fontNormal));
+            // Valor DNI o RUC
+            String documentoValue = (ruc != null && !ruc.isEmpty()) ? 
+                                  ruc : 
+                                  (factura.getCliente().getUsuario().getDni() != null ? factura.getCliente().getUsuario().getDni() : "");
+            PdfPCell dniValueCell = new PdfPCell(new Paragraph(documentoValue, fontNormal));
             dniValueCell.setBorder(Rectangle.NO_BORDER);
             infoTable.addCell(dniValueCell);
             
@@ -374,10 +382,19 @@ public class PdfGeneratorService {
             
             document.add(itemsTable);
             
-            // Calcular IGV (18%)
+            // Calcular totales con o sin IGV según el parámetro conIgv
             BigDecimal subtotalVenta = precioServicio.add(totalProductos);
-            BigDecimal igv = subtotalVenta.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
-            BigDecimal totalVenta = subtotalVenta.add(igv);
+            BigDecimal igv = BigDecimal.ZERO;
+            BigDecimal totalVenta;
+            
+            if (conIgv) {
+                // Si incluye IGV, calculamos el 18%
+                igv = subtotalVenta.multiply(new BigDecimal("0.18")).setScale(2, RoundingMode.HALF_UP);
+                totalVenta = subtotalVenta.add(igv);
+            } else {
+                // Si no incluye IGV, el total es igual al subtotal
+                totalVenta = subtotalVenta;
+            }
             
             // RESUMEN DE TOTALES (lado derecho)
             PdfPTable totalsTable = new PdfPTable(2);
@@ -398,17 +415,19 @@ public class PdfGeneratorService {
             subtotalValueCell.setPadding(5);
             totalsTable.addCell(subtotalValueCell);
             
-            // IGV
-            PdfPCell igvLabelCell = new PdfPCell(new Paragraph("IGV", fontNormal));
-            igvLabelCell.setBorder(Rectangle.LEFT | Rectangle.BOTTOM);
-            igvLabelCell.setPadding(5);
-            totalsTable.addCell(igvLabelCell);
-            
-            PdfPCell igvValueCell = new PdfPCell(new Paragraph(String.format("%.2f", igv), fontNormal));
-            igvValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
-            igvValueCell.setBorder(Rectangle.RIGHT | Rectangle.BOTTOM);
-            igvValueCell.setPadding(5);
-            totalsTable.addCell(igvValueCell);
+            // IGV (solo si conIgv es true)
+            if (conIgv) {
+                PdfPCell igvLabelCell = new PdfPCell(new Paragraph("IGV", fontNormal));
+                igvLabelCell.setBorder(Rectangle.LEFT | Rectangle.BOTTOM);
+                igvLabelCell.setPadding(5);
+                totalsTable.addCell(igvLabelCell);
+                
+                PdfPCell igvValueCell = new PdfPCell(new Paragraph(String.format("%.2f", igv), fontNormal));
+                igvValueCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                igvValueCell.setBorder(Rectangle.RIGHT | Rectangle.BOTTOM);
+                igvValueCell.setPadding(5);
+                totalsTable.addCell(igvValueCell);
+            }
             
             // Total
             PdfPCell totalLabelCell = new PdfPCell(new Paragraph("IMPORTE TOTAL S/", fontBold));
@@ -438,8 +457,12 @@ public class PdfGeneratorService {
             footerTable.setWidths(new float[]{1, 1});
             footerTable.setSpacingBefore(20);
             
-            // Código QR
-            BarcodeQRCode qrCode = new BarcodeQRCode(codigoFactura + "|" + empresa.getRuc() + "|" + totalVenta.toString(), 100, 100, null);
+            // Código QR (incluye RUC del cliente si está disponible)
+            String qrContent = codigoFactura + "|" + empresa.getRuc() + "|" + totalVenta.toString();
+            if (ruc != null && !ruc.isEmpty()) {
+                qrContent += "|" + ruc;
+            }
+            BarcodeQRCode qrCode = new BarcodeQRCode(qrContent, 100, 100, null);
             Image qrCodeImage = qrCode.getImage();
             qrCodeImage.scalePercent(150);
             

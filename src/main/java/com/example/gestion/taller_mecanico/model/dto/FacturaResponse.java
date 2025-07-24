@@ -29,5 +29,6 @@ public class FacturaResponse {
     private String codigoFactura;
     private String metodoPago;
     private String nroOperacion;
+    private String tipo;
     private String imagenOperacion;
 }

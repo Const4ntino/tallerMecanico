@@ -51,9 +51,11 @@ public class FacturaController {
     @PostMapping(value = "/con-imagen", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
     public ResponseEntity<FacturaResponse> saveWithImage(
             @RequestPart("factura") @Valid FacturaRequest facturaRequest,
-            @RequestPart(value = "imagenOperacion", required = false) MultipartFile imagenOperacion) {
-        return new ResponseEntity<>(facturaService.save(facturaRequest, imagenOperacion), HttpStatus.CREATED);
-    }
+            @RequestPart(value = "imagenOperacion", required = false) MultipartFile imagenOperacion,
+            @RequestParam(value = "conIgv", defaultValue = "false") boolean conIgv,
+            @RequestParam(value = "ruc", required = false) String ruc) {
+        return new ResponseEntity<>(facturaService.save(facturaRequest, imagenOperacion, conIgv, ruc), HttpStatus.CREATED);
+    }   
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")
     @PutMapping("/{id}")
@@ -66,8 +68,10 @@ public class FacturaController {
     public ResponseEntity<FacturaResponse> updateWithImage(
             @PathVariable Long id,
             @RequestPart("factura") @Valid FacturaRequest facturaRequest,
-            @RequestPart(value = "imagenOperacion", required = false) MultipartFile imagenOperacion) {
-        return ResponseEntity.ok(facturaService.update(id, facturaRequest, imagenOperacion));
+            @RequestPart(value = "imagenOperacion", required = false) MultipartFile imagenOperacion,
+            @RequestParam(value = "conIgv", defaultValue = "false") boolean conIgv,
+            @RequestParam(value = "ruc", required = false) String ruc) {
+        return ResponseEntity.ok(facturaService.update(id, facturaRequest, imagenOperacion, conIgv, ruc));
     }
 
     @PreAuthorize("hasAnyRole('ADMINISTRADOR', 'ADMINISTRADOR_TALLER')")

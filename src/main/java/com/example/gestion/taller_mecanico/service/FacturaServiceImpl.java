@@ -28,6 +28,7 @@ import com.example.gestion.taller_mecanico.specification.FacturaSpecification;
 import com.example.gestion.taller_mecanico.utils.enums.MantenimientoEstado;
 import com.example.gestion.taller_mecanico.utils.enums.Rol;
 
+import com.example.gestion.taller_mecanico.utils.enums.TipoFactura;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -77,12 +78,12 @@ public class FacturaServiceImpl implements FacturaService {
     @Override
     @Transactional
     public FacturaResponse save(FacturaRequest facturaRequest) {
-        return save(facturaRequest, null);
+        return save(facturaRequest, null, true, null);
     }
     
     @Override
     @Transactional
-    public FacturaResponse save(FacturaRequest facturaRequest, MultipartFile imagenOperacion) {
+    public FacturaResponse save(FacturaRequest facturaRequest, MultipartFile imagenOperacion, boolean conIgv, String ruc) {
         Mantenimiento mantenimiento = mantenimientoRepository.findById(facturaRequest.getMantenimientoId())
                 .orElseThrow(() -> new MantenimientoNotFoundException("Mantenimiento no encontrado con ID: " + facturaRequest.getMantenimientoId()));
 
@@ -126,13 +127,14 @@ public class FacturaServiceImpl implements FacturaService {
                 .metodoPago(Enum.valueOf(MetodoPago.class, facturaRequest.getMetodoPago()))
                 .nroOperacion(facturaRequest.getNroOperacion())
                 .imagenOperacion(imagenOperacionUrl)
+                .tipo(Enum.valueOf(TipoFactura.class, facturaRequest.getTipo()))
                 .build();
         Factura savedFactura = facturaRepository.save(factura); // Guarda la factura inicialmente
 
         // --- Generación y Subida del PDF ---
         try {
             // 1. Generar el PDF
-            byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(savedFactura, productosUsados); // Pasa la factura y los productos usados
+            byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(savedFactura, productosUsados, conIgv, ruc); // Pasa la factura y los productos usados
 
             // 2. Subir el PDF y obtener la URL
             String pdfUrl = fileStorageService.storeFacturaPdf(pdfBytes, "factura_" + savedFactura.getId() + ".pdf");
@@ -154,12 +156,12 @@ public class FacturaServiceImpl implements FacturaService {
     @Override
     @Transactional
     public FacturaResponse update(Long id, FacturaRequest facturaRequest) {
-        return update(id, facturaRequest, null);
+        return update(id, facturaRequest, null, true, null);
     }
     
     @Override
     @Transactional
-    public FacturaResponse update(Long id, FacturaRequest facturaRequest, MultipartFile imagenOperacion) {
+    public FacturaResponse update(Long id, FacturaRequest facturaRequest, MultipartFile imagenOperacion, boolean conIgv, String ruc) {
         return facturaRepository.findById(id)
                 .map(facturaExistente -> {
                     Mantenimiento mantenimiento = mantenimientoRepository.findById(facturaRequest.getMantenimientoId())
@@ -209,7 +211,7 @@ public class FacturaServiceImpl implements FacturaService {
 
                     // --- Regeneración y Subida del PDF (si es necesario) ---
                     try {
-                        byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(updatedFactura, productosUsados);
+                        byte[] pdfBytes = pdfGeneratorService.generateFacturaPdf(updatedFactura, productosUsados, conIgv, ruc);
                         String pdfUrl = fileStorageService.storeFacturaPdf(pdfBytes, "factura_" + updatedFactura.getId() + ".pdf");
                         updatedFactura.setPdfUrl(pdfUrl);
                         facturaRepository.save(updatedFactura);

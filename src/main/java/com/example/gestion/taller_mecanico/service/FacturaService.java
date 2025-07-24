@@ -18,9 +18,9 @@ public interface FacturaService {
     List<FacturaResponse> findAll();
     FacturaResponse findById(Long id);
     FacturaResponse save(FacturaRequest facturaRequest);
-    FacturaResponse save(FacturaRequest facturaRequest, MultipartFile imagenOperacion);
+    FacturaResponse save(FacturaRequest facturaRequest, MultipartFile imagenOperacion, boolean conIgv, String ruc);
     FacturaResponse update(Long id, FacturaRequest facturaRequest);
-    FacturaResponse update(Long id, FacturaRequest facturaRequest, MultipartFile imagenOperacion);
+    FacturaResponse update(Long id, FacturaRequest facturaRequest, MultipartFile imagenOperacion, boolean conIgv, String ruc);
     void deleteById(Long id);
     FacturaResponse findFacturaDetailsById(Long id);
     Page<FacturaResponse> findFacturasByFilters(String search, Long mantenimientoId, Long clienteId, Long tallerId, LocalDateTime fechaEmisionDesde, LocalDateTime fechaEmisionHasta, BigDecimal minTotal, BigDecimal maxTotal, MetodoPago metodoPago, Pageable pageable);

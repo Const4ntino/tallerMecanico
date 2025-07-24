@@ -1,6 +1,7 @@
 package com.example.gestion.taller_mecanico.model.entity;
 
 import com.example.gestion.taller_mecanico.utils.enums.MetodoPago;
+import com.example.gestion.taller_mecanico.utils.enums.TipoFactura;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -59,6 +60,10 @@ public class Factura {
 
     @Column(name = "imagen_operacion", columnDefinition = "TEXT")
     private String imagenOperacion;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 50)
+    private TipoFactura tipo;
 
     @PrePersist
     protected void onCreate() {

@@ -32,6 +32,9 @@ public class FacturaRequest {
 
     private String nroOperacion;
 
+    @NotNull
+    private String tipo; // BOLETA o FACTURA
+
     private String imagenOperacion;
 }
 
