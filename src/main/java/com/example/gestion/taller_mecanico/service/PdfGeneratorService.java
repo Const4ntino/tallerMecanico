@@ -1,5 +1,6 @@
 package com.example.gestion.taller_mecanico.service;
 
+import com.example.gestion.taller_mecanico.model.dto.DashboardSummaryResponse;
 import com.example.gestion.taller_mecanico.model.entity.Empresa;
 import com.example.gestion.taller_mecanico.model.entity.Factura;
 import com.example.gestion.taller_mecanico.model.entity.MantenimientoProducto;
@@ -26,8 +27,10 @@ import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -518,6 +521,235 @@ public class PdfGeneratorService {
         
         return convertirParteEntera(parteEntera) + 
                (parteDecimal > 0 ? " CON " + parteDecimal + "/100" : " CON 00/100");
+    }
+    
+    /**
+     * Genera un PDF con las métricas del dashboard
+     * @param dashboardData Datos del dashboard
+     * @param startDate Fecha de inicio del periodo (opcional)
+     * @param endDate Fecha de fin del periodo (opcional)
+     * @param groupBy Agrupación de datos (MONTH o YEAR)
+     * @return Array de bytes con el PDF generado
+     */
+    public byte[] generateDashboardPdf(DashboardSummaryResponse dashboardData, 
+                                      LocalDateTime startDate, 
+                                      LocalDateTime endDate, 
+                                      String groupBy) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Document document = new Document(PageSize.A4, 36, 36, 54, 36);
+
+        try {
+            PdfWriter writer = PdfWriter.getInstance(document, baos);
+            document.open();
+            
+            // Obtener la información de la empresa
+            Empresa empresa = empresaRepository.findById(1L)
+                    .orElseThrow(() -> new RuntimeException("No se encontró la información de la empresa"));
+            
+            // Definir fuentes
+            Font fontTitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 16, BaseColor.BLACK);
+            Font fontSubtitle = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.BLACK);
+            Font fontNormal = FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.BLACK);
+            Font fontSmall = FontFactory.getFont(FontFactory.HELVETICA, 8, BaseColor.BLACK);
+            Font fontBold = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.BLACK);
+            Font fontHeader = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.WHITE);
+            
+            // Cabecera con información de la empresa
+            PdfPTable headerTable = new PdfPTable(2);
+            headerTable.setWidthPercentage(100);
+            headerTable.setWidths(new float[]{1, 1});
+            
+            // Información de la empresa
+            PdfPCell empresaCell = new PdfPCell();
+            empresaCell.setBorder(Rectangle.NO_BORDER);
+            empresaCell.setPaddingBottom(10);
+            
+            Paragraph empresaNombre = new Paragraph(empresa.getRazon(), fontTitle);
+            empresaCell.addElement(empresaNombre);
+            
+            Paragraph empresaDireccion = new Paragraph(empresa.getDireccion(), fontNormal);
+            empresaCell.addElement(empresaDireccion);
+            
+            Paragraph empresaRuc = new Paragraph("RUC: " + empresa.getRuc(), fontNormal);
+            empresaCell.addElement(empresaRuc);
+            
+            headerTable.addCell(empresaCell);
+            
+            // Título del reporte
+            PdfPCell titleCell = new PdfPCell();
+            titleCell.setBorder(Rectangle.NO_BORDER);
+            titleCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            
+            Paragraph reportTitle = new Paragraph("REPORTE DE DASHBOARD", fontTitle);
+            titleCell.addElement(reportTitle);
+            
+            // Fechas del reporte
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            String fechaStr = "";
+            
+            if (startDate != null && endDate != null) {
+                fechaStr = "Periodo: " + startDate.format(formatter) + " - " + endDate.format(formatter);
+            } else {
+                fechaStr = "Reporte completo";
+            }
+            
+            Paragraph fechaReporte = new Paragraph(fechaStr, fontNormal);
+            fechaReporte.setAlignment(Element.ALIGN_RIGHT);
+            titleCell.addElement(fechaReporte);
+            
+            // Agrupación
+            String groupByStr = "";
+            if (groupBy != null) {
+                groupByStr = "Agrupado por: " + (groupBy.equalsIgnoreCase("MONTH") ? "Mes" : "Año");
+            }
+            
+            Paragraph groupByParagraph = new Paragraph(groupByStr, fontNormal);
+            groupByParagraph.setAlignment(Element.ALIGN_RIGHT);
+            titleCell.addElement(groupByParagraph);
+            
+            headerTable.addCell(titleCell);
+            document.add(headerTable);
+            
+            // Separador
+            PdfPTable separator = new PdfPTable(1);
+            separator.setWidthPercentage(100);
+            PdfPCell separatorCell = new PdfPCell();
+            separatorCell.setBackgroundColor(new BaseColor(220, 220, 220));
+            separatorCell.setFixedHeight(2f);
+            separatorCell.setBorder(Rectangle.NO_BORDER);
+            separator.addCell(separatorCell);
+            document.add(separator);
+            document.add(new Paragraph(" "));
+            
+            // Resumen de métricas
+            Paragraph metricsTitle = new Paragraph("RESUMEN DE MÉTRICAS", fontSubtitle);
+            metricsTitle.setSpacingAfter(10);
+            document.add(metricsTitle);
+            
+            PdfPTable metricsTable = new PdfPTable(4);
+            metricsTable.setWidthPercentage(100);
+            metricsTable.setWidths(new float[]{1, 1, 1, 1});
+            
+            // Cabeceras de la tabla de métricas
+            String[] headers = {"Total Mantenimientos", "Total Clientes", "Total Vehículos", "Total Ingresos"};
+            for (String header : headers) {
+                PdfPCell headerCell = new PdfPCell(new Paragraph(header, fontBold));
+                headerCell.setBackgroundColor(new BaseColor(66, 66, 66));
+                headerCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                headerCell.setPadding(5);
+                headerCell.setBorderColor(BaseColor.WHITE);
+                headerCell.setBorderWidth(1);
+                metricsTable.addCell(headerCell);
+            }
+            
+            // Valores de las métricas
+            PdfPCell mantenimientosCell = new PdfPCell(new Paragraph(String.valueOf(dashboardData.getTotalMantenimientos()), fontNormal));
+            mantenimientosCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            mantenimientosCell.setPadding(5);
+            metricsTable.addCell(mantenimientosCell);
+            
+            PdfPCell clientesCell = new PdfPCell(new Paragraph(String.valueOf(dashboardData.getTotalClientes()), fontNormal));
+            clientesCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            clientesCell.setPadding(5);
+            metricsTable.addCell(clientesCell);
+            
+            PdfPCell vehiculosCell = new PdfPCell(new Paragraph(String.valueOf(dashboardData.getTotalVehiculos()), fontNormal));
+            vehiculosCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            vehiculosCell.setPadding(5);
+            metricsTable.addCell(vehiculosCell);
+            
+            // Formatear el total de ingresos
+            String totalIngresos = String.format("S/ %.2f", dashboardData.getTotalIngresos());
+            PdfPCell ingresosCell = new PdfPCell(new Paragraph(totalIngresos, fontNormal));
+            ingresosCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            ingresosCell.setPadding(5);
+            metricsTable.addCell(ingresosCell);
+            
+            document.add(metricsTable);
+            document.add(new Paragraph(" "));
+            
+            // Tabla de ingresos por período
+            if (dashboardData.getIngresosPorPeriodo() != null && !dashboardData.getIngresosPorPeriodo().isEmpty()) {
+                Paragraph ingresosPorPeriodoTitle = new Paragraph("INGRESOS POR PERÍODO", fontSubtitle);
+                ingresosPorPeriodoTitle.setSpacingAfter(10);
+                document.add(ingresosPorPeriodoTitle);
+                
+                PdfPTable ingresosPorPeriodoTable = new PdfPTable(2);
+                ingresosPorPeriodoTable.setWidthPercentage(100);
+                ingresosPorPeriodoTable.setWidths(new float[]{1, 1});
+                
+                // Cabeceras de la tabla de ingresos por período
+                PdfPCell periodoHeaderCell = new PdfPCell(new Paragraph("Período", fontHeader));
+                periodoHeaderCell.setBackgroundColor(new BaseColor(66, 66, 66));
+                periodoHeaderCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                periodoHeaderCell.setPadding(5);
+                periodoHeaderCell.setBorderColor(BaseColor.WHITE);
+                periodoHeaderCell.setBorderWidth(1);
+                ingresosPorPeriodoTable.addCell(periodoHeaderCell);
+                
+                PdfPCell ingresoHeaderCell = new PdfPCell(new Paragraph("Ingreso", fontHeader));
+                ingresoHeaderCell.setBackgroundColor(new BaseColor(66, 66, 66));
+                ingresoHeaderCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                ingresoHeaderCell.setPadding(5);
+                ingresoHeaderCell.setBorderColor(BaseColor.WHITE);
+                ingresoHeaderCell.setBorderWidth(1);
+                ingresosPorPeriodoTable.addCell(ingresoHeaderCell);
+                
+                // Valores de ingresos por período
+                for (Map.Entry<String, BigDecimal> entry : dashboardData.getIngresosPorPeriodo().entrySet()) {
+                    String periodo = entry.getKey();
+                    BigDecimal ingreso = entry.getValue();
+                    
+                    // Formatear el período según el groupBy
+                    String periodoFormateado = periodo;
+                    if (groupBy != null && groupBy.equalsIgnoreCase("MONTH")) {
+                        // Intentar formatear el período YYYY-MM a un formato más legible
+                        try {
+                            String[] parts = periodo.split("-");
+                            if (parts.length == 2) {
+                                int year = Integer.parseInt(parts[0]);
+                                int month = Integer.parseInt(parts[1]);
+                                String[] meses = {"Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+                                                "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"};
+                                periodoFormateado = meses[month - 1] + " " + year;
+                            }
+                        } catch (Exception e) {
+                            // Si hay error en el formato, usar el original
+                            periodoFormateado = periodo;
+                        }
+                    }
+                    
+                    PdfPCell periodoCell = new PdfPCell(new Paragraph(periodoFormateado, fontNormal));
+                    periodoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    periodoCell.setPadding(5);
+                    ingresosPorPeriodoTable.addCell(periodoCell);
+                    
+                    // Formatear el ingreso
+                    String ingresoStr = String.format("S/ %.2f", ingreso);
+                    PdfPCell ingresoCell = new PdfPCell(new Paragraph(ingresoStr, fontNormal));
+                    ingresoCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    ingresoCell.setPadding(5);
+                    ingresosPorPeriodoTable.addCell(ingresoCell);
+                }
+                
+                document.add(ingresosPorPeriodoTable);
+            }
+            
+            // Pie de página
+            document.add(new Paragraph(" "));
+            document.add(new Paragraph(" "));
+            Paragraph footer = new Paragraph("Reporte generado el " + 
+                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss")), fontSmall);
+            footer.setAlignment(Element.ALIGN_CENTER);
+            document.add(footer);
+            
+        } catch (DocumentException e) {
+            e.printStackTrace();
+        } finally {
+            document.close();
+        }
+
+        return baos.toByteArray();
     }
     
     private String convertirParteEntera(long numero) {
